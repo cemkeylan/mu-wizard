@@ -27,16 +27,16 @@ Emacs will not be loading the configurations, you will need to set it manually.
 In your init file, you may choose to load the configuration in the following
 ways.
 
-```lisp
+``` elisp
 (load-file "~/.config/mu4e/mu4e-config.el")
 ```
 
-```lisp
+``` elisp
 (add-to-list 'load-path "~/.config/mu4e")
 (require 'mu4e-config)
 ```
 
-```lisp
+``` elisp
 (use-package mu4e-config
   :after mu4e
   :load-path "~/.config/mu4e")
