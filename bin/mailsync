@@ -1,0 +1,31 @@
+#!/bin/sh
+
+out() { printf '%s\n' "$@" >&2 ;}
+die() { out "$@"; exit 1 ;}
+
+pgrep -x mbsync >/dev/null && die "mbsync is already running."
+
+notify() { notify-send "mu-wizard" "$2 new mail(s) in '$1' account." ;}
+
+[ "$1" ] || while read -r chan name; do
+    case "$chan" in Channel) ;; *) continue; esac
+    accounts="$accounts $name"
+done < "$HOME/.mbsyncrc"
+
+for acc in ${accounts:=$*}; do
+    acc=${acc##*/}
+    mbsync "$acc" &
+done; wait
+
+for acc in $accounts; do
+    newcount=$(find "$HOME/.local/share/mail/$acc/"*/new \
+                    -type f -newer "$HOME/.cache/.mailsynclastrun" | wc -l)
+    [ "$newcount" -gt 0 ] && notify "$acc" "$newcount"
+done
+
+
+# Run index update if emacs is available.
+emacsclient -e "(mu4e-update-index)" >/dev/null 2>&1 ||
+    mu index
+
+touch "$HOME/.cache/.mailsynclastrun"

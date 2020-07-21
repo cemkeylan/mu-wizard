@@ -1,0 +1,317 @@
+#!/bin/sh
+
+out() { printf '%s\n' "$@" >&2 ;}
+err() { printf 'err: %s\n' "$@" >&2 ;}
+die() { err "$@"; exit 1 ;}
+prompt() { printf '%s\n' "$1"; [ "$2" ] && printf '%s: ' "$2" ;}
+
+yesno() {
+    printf '%s\n' "$@"; printf '[y]es/[n]o: '
+    read -r ans
+    case "$ans" in [Yy]*) return 0; esac; return 1
+}
+
+delete() {
+    rm -f "$accountdir/$title.el"
+    sed_i "/^IMAPStore $title-remote\$/,/^# End profile\$/d" "$HOME/.mbsyncrc"
+    sed_i "/^account $title\$/,/^# End profile\$/d" "$config_home/msmtp/config"
+    rm -f /tmp/mbsync-boxes
+}
+
+contains() {
+    # Check whether a list contains the given value
+    # Example: 'contains "a" "a b c d e f"' returns 0
+    case " $2 " in *" $1 "*) return 0; esac; return 1
+}
+
+sed_i() {
+    # 'sed -i' like function without actually running it. This can be only used
+    # for a single file, and the filename should always come last.
+    sed "$@" > _; for file; do :; done; mv _ "$file"
+}
+
+get_profiles() {
+    # Function to get all available profiles
+    unset profiles
+    for profile in "$accountdir"/*.el; do
+        [ -f "$profile" ] || continue
+        profile=${profile##*/}
+        profiles="${profile%.el} $profiles"
+    done
+}
+
+msmtp_header() {
+    mkdir -p "$config_home/msmtp"
+    cat <<EOF > "$config_home/msmtp/config"
+defaults
+auth on
+tls on
+tls_trust_file $sslcert
+logfile ~/.config/msmtp/msmtp.log
+EOF
+}
+
+pm_ask() {
+    if [ "$(command -v pass)" ]; then
+        pass insert "$pmt"
+        password_command="pass show $pmt"
+    elif [ "$(command -v pash)" ]; then
+        # Disable 'generate password?' prompt. We need to create a file and run
+        # it, because the password manager needs to own the standard input.
+        sed 's/yn "Gen/false "Gen/g' "$(command -v pash)" >_
+        sh _ add "$pmt"
+        rm -f _
+        password_command="pash show $pmt"
+    elif [ "$(command -v pm)" ]; then
+        stty -echo
+        printf 'Enter your password: '; read -r pass
+        printf '\nEnter your password again: '; read -r pass2
+        printf '\n'
+        stty echo
+        if [ "$pass" = "$pass2" ]; then
+            pm add "$pmt" <<EOF
+$pass
+EOF
+            password_command="pm show $pmt"
+        else
+            err "Passwords don't match"
+            return 1
+        fi
+    fi
+}
+
+pm_del() {
+    if [ "$(command -v pass)" ]; then
+        pass rm -f "$pmt"
+    elif [ "$(command -v pash)" ]; then
+        yes | pash del "$pmt"
+    elif [ "$(command -v pm)" ]; then
+        pm del "$pmt"
+    fi > /dev/null 2>&1
+}
+
+test_connection() {
+    mkdir -p "$maildir/$title"
+
+    # Since we are "Flattening" the inbox structure by replacing '/' with '.',
+    # we need to also replace it in the 'mbsync -l' output by hand. See the
+    # Flatten section on mbsync(1).
+    { mbsync -l "$title" || die "Log-on not successful." \
+          "It seems that either you have inputted the wrong password or server settings," \
+          "or there are requirements for your account out of the control of mu-wizard."
+    } | sed 's|/|.|g' > /tmp/mbsync-boxes
+
+    while read -r dir; do mkdir -p "$maildir/$title/${dir#/}"; done < /tmp/mbsync-boxes
+
+    drafts=$(grep -i drafts /tmp/mbsync-boxes | sed 1q)
+    trash=$(grep  -i trash  /tmp/mbsync-boxes | sed 1q)
+    inbox=$(grep  -i inbox  /tmp/mbsync-boxes | sed 1q)
+    sent=$(grep   -i sent   /tmp/mbsync-boxes | sed 1q)
+
+    rm -f /tmp/mbsync-boxes
+}
+
+get_domains() {
+    [ -f "$confdir/domains.csv" ] && {
+        if [ -f "$sharedir/domains.csv" ]; then
+            sort -u -o "$confdir/domains.csv" "$sharedir/domains.csv" "$confdir/domains.csv"
+        else
+            sort -u -o "$confdir/domains.csv" "$confdir/domains.csv"
+        fi
+        return
+    }
+    :> "$confdir/domains.csv"
+    [ -f "$sharedir/domains.csv" ] && cp "$sharedir/domains.csv" "$confdir/domains.csv"
+}
+
+set_mbsync() {
+    cat <<EOF >> "$HOME/.mbsyncrc"
+IMAPStore $title-remote
+Host $imap
+Port $iport
+User $login
+PassCmd "$password_command"
+SSLType IMAPS
+CertificateFile $sslcert
+
+MaildirStore $title-local
+Subfolders Verbatim
+Path ~/.local/share/mail/$title/
+Inbox ~/.local/share/mail/$title/INBOX
+Flatten .
+
+Channel $title
+Expunge Both
+Master :$title-remote:
+Slave  :$title-local:
+Patterns * !"[Gmail]/All Mail"
+Create Both
+SyncState *
+MaxMessages ${maxmes:-0}
+ExpireUnread no
+# End profile
+
+EOF
+}
+
+set_msmtp() {
+    [ -f "$config_home/msmtp/config" ] || msmtp_header
+
+    cat <<EOF >> "$config_home/msmtp/config"
+account $title
+host $smtp
+port $sport
+from $fulladdr
+user $login
+passwordeval "$password_command"
+$starttlsoff
+# End profile
+
+EOF
+}
+
+set_accountlisp() {
+    cat <<EOF > "$accountdir/$title.el"
+(add-to-list 'mu4e-contexts
+(make-mu4e-context
+  :name "$title"
+  :match-func (lambda (msg)
+                (when msg
+                  (mu4e-message-contact-field-matches msg
+                     :to "$fulladdr")))
+  :vars '((user-mail-address                . "$fulladdr")
+          (message-sendmail-extra-arguments . ("-a" "$title"))
+          (mu4e-drafts-folder               . "/$title/${drafts:=Drafts}")
+          (mu4e-trash-folder                . "/$title/${trash:=Trash}")
+          (mu4e-maildir-shortcuts           . (("/$title/${inbox:-INBOX}" . ?i)
+                                               ("/$title/$drafts"         . ?d)
+                                               ("/$title/${sent:-Drafts}" . ?s)))
+          (user-full-name                   . "$realname"))))
+EOF
+
+}
+
+get_information() {
+    for file in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt \
+                /etc/certificates/cert.pem /etc/ssl/ca-bundle.pem /etc/ssl/cert.pem \
+                /etc/pki/tls/cacert.pem /usr/share/ca-certificates; do
+        [ -e "$file" ] || continue
+        sslcert=$file; break
+    done
+
+    prompt "Insert the email address that you want to configure for mu4e" "Email"
+    read -r fulladdr
+
+    while IFS=, read -r domain imap iport smtp sport; do
+        case "$domain" in "${fulladdr##*@}") break; esac
+    done < "$confdir/domains.csv"
+
+    if [ "$domain" = "${fulladdr##*@}" ]; then
+        out "Your domain information was found on '$confdir/domains.csv'!'" \
+            "The following information will be used:" ""\
+            "Domain: $domain" \
+            "IMAP:   $imap:$iport" \
+            "SMTP:   $smtp:$sport"
+    else
+        prompt "Insert the IMAP server for your email provider (excluding the port number)" "Server"
+        read -r imap
+
+        prompt "What is your server's IMAP port number? (Usually 993)" "Port"
+        read -r iport
+
+        prompt "Insert the SMTP server for your email provider (excluding the port number)" "Server"
+        read -r smtp
+
+        prompt "What is your server's SMTP port number? (Usually 587 or 465)"
+        read -r sport
+    fi
+
+    prompt "Enter the full name you want to be identified by on this account." "Real name"
+    read -r realname
+
+    prompt "Enter a short, one-word identifier for this email account that will distinguish them from any other accounts you add" "Account name"
+    read -r title
+    while contains "$title" "$profiles"; do
+        prompt "Profile '$title' already exists, please specify a different name" "Account name"
+        read -r title
+    done
+
+    prompt "If your account has a special username different from your address, insert it now. Otherwise leave this blank." "Login(?)"
+    read -r login
+
+    # If login is empty use fulladdr
+    [ "$login" ] || login="$fulladdr"
+
+    prompt "If you want to limit the number of messages kept offline to a number, enter it below. Otherwise leave this blank." "Maximum messages"
+    read -r maxmes
+
+    case "$sport" in 465) starttlsoff="tls_starttls off"; esac
+}
+
+main() {
+    command -v pass >/dev/null || command -v pash || command -v pm ||
+        die "No applicable password manager found."
+    command -v mbsync >/dev/null || die "mbsync must be installed for mu-wizard to work."
+
+    sharedir=/usr/share/mu-wizard
+
+    mkdir -p "${config_home:=${XDG_CONFIG_HOME:-$HOME/.config}}" \
+             "${confdir:=$config_home/mu4e}" \
+             "${accountdir:=$confdir/accounts}" \
+             "${maildir:=$HOME/.local/share/mail}"
+
+    get_profiles
+
+    case "$1" in
+        l|list) for profile in $profiles; do out "  $profile"; done ;;
+
+        a|add)
+            get_domains
+            get_information
+            trap delete INT EXIT
+            pmt="mu-wizard-$title"
+            while :; do pm_del; pm_ask && break; done
+            set_mbsync
+            test_connection
+            set_msmtp
+            set_accountlisp
+            [ -f "$confdir/mu4e-config.el" ] || cp "$sharedir/mu4e-config.el" "$confdir/mu4e-config.el"
+
+            # We add user's personal domain information to the config directory,
+            # so even if the user doesn't want to share the information in a git
+            # repository, they can have it themselves when they may need it.
+
+            printf '%s,%s,%s,%s,%s' \
+                   "${fulladdr##*@}" "$imap" "$iport" "$smtp" "$sport" >> "$confdir/domains.csv"
+            trap '' INT EXIT
+            out "All done. You can now run 'mbsync $title' in order to sync this account."
+            ;;
+
+        d|delete)
+            out "Pick a profile to be deleted"
+            for profile in $profiles; do out "  $profile"; done
+            read -r title
+            contains "$title" "$profiles" || die "Profile '$title' doesn't exist."
+            yesno "Are you sure you want to delete '$title'?" && delete
+            ;;
+        p|purge)
+            yesno "Are you sure you want to delete all account data?" || exit 1
+            rm -rf "$HOME/.mbsyncrc" "$confdir" "$config_home/msmtp"
+            ;;
+        ''|--help|-h)
+            out "usage: ${0##*/} [action]" \
+                "mu-wizard, auto-configure email accounts for mu4e" \
+                "  Options:" \
+                "    [a]dd:    Add and aoutoconfigure an email address" \
+                "    [d]elete: Pick an account to delete" \
+                "    [l]ist:   List configured accounts" \
+                "    [p]urge:  Purge all configuration" "" \
+                "NOTE: Once at least one account is added, you can run" \
+                "'mbsync -a' to begin downloading mail."
+            ;;
+        *) die "Unknown action '$1'"
+    esac
+
+}
+
+main "$@"
