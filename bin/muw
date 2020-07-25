@@ -131,7 +131,7 @@ Host $imap
 Port $iport
 User $login
 PassCmd "$password_command"
-SSLType IMAPS
+SSLType $ssltype
 CertificateFile $sslcert
 
 MaildirStore $title-local
@@ -202,7 +202,19 @@ get_information() {
     prompt "Insert the email address that you want to configure for mu4e" "Email"
     read -r fulladdr
 
-    while IFS=, read -r domain imap iport smtp sport; do
+    # Check the override directory for possible alterations of the
+    # configuration. If the override is found on the configuration dirctory, it
+    # will be used instead.
+    for file in "$confdir/overrides/"* "$sharedir/overrides/"*; do
+        [ -f "$sharedir/overrides/${fulladdr##*@}" ] && {
+            domain=${fulladdr##*@}
+            # shellcheck disable=1090
+            . "$sharedir/overrides/$domain"
+            break
+        }
+    done
+
+    [ "$domain" ] || while IFS=, read -r domain imap iport smtp sport; do
         case "$domain" in "${fulladdr##*@}") break; esac
     done < "$confdir/domains.csv"
 
@@ -254,6 +266,7 @@ main() {
     command -v mbsync >/dev/null || die "mbsync must be installed for mu-wizard to work."
 
     sharedir=/usr/share/mu-wizard
+    ssltype=IMAPS
 
     mkdir -p "${config_home:=${XDG_CONFIG_HOME:-$HOME/.config}}" \
              "${confdir:=$config_home/mu4e}" \
