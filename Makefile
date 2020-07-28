@@ -16,8 +16,8 @@ install:
 	chmod 644 ${DESTDIR}${MUSHAREDIR}/mu4e-config.el
 	mkdir -p ${DESTDIR}${MUSHAREDIR}/overrides
 	for override in overrides/*; do\
-		cp $${override} ${DESTDIR}${MUSHAREDIR}/$${override##*/}; \
-		chmod 644 ${DESTDIR}${MUSHAREDIR}/$${override##*/}; done
+		cp $${override} ${DESTDIR}${MUSHAREDIR}/overrides/$${override##*/}; \
+		chmod 644 ${DESTDIR}${MUSHAREDIR}/overrides/$${override##*/}; done
 
 uninstall:
 	rm -rf ${DESTDIR}${BINDIR}/muw ${DESTDIR}${BINDIR}/mailsync \
