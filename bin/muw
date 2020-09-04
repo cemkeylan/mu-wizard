@@ -298,6 +298,9 @@ main() {
             yesno "Are you sure you want to delete all account data?" || exit 1
             rm -rf "$HOME/.mbsyncrc" "$confdir" "$config_home/msmtp"
             ;;
+        s|share)
+            # Output the share directory and exit.
+            printf '%s\n' "$sharedir" ;;
         ''|--help|-h)
             out "usage: ${0##*/} [action]" \
                 "mu-wizard, auto-configure email accounts for mu4e" \
