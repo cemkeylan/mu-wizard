@@ -51,3 +51,23 @@ one if it is found on `/usr/share/mu-wizard/domains.csv`. `mu-wizard` also saves
 the domain information that you use when creating an account on your
 configuration directory, so you don't have to retype every detail when creating
 a second account with the same domain.
+
+
+Overrides
+--------------------------------------------------------------------------------
+
+Domain-level overrides are possible by adding a shell file to either the share
+directory (`/usr/local/share/mu-wizard/overrides` (depends on your prefix)) or
+the user configuration directory (`~/.config/mu4e/overrides`). See
+`overrides/protonmail.com` for an example override.
+
+
+### Protonmail users
+
+`mu-wizard` supports protonmail. If you are using one of the default domains,
+you don't have to do anything. If you are an alternative domain, you can link
+the protonmail.com override to your personal domain. Here is an example:
+
+``` sh
+ln -sf /usr/share/mu-wizard/overrides/protonmail.com $HOME/.config/mu4e/overrides/example.com
+```
