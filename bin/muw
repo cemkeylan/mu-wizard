@@ -219,7 +219,7 @@ get_information() {
     done < "$confdir/domains.csv"
 
     if [ "$domain" = "${fulladdr##*@}" ]; then
-        out "Your domain information was found on '$confdir/domains.csv'!'" \
+        out "Your domain information was found!'" \
             "The following information will be used:" ""\
             "Domain: $domain" \
             "IMAP:   $imap:$iport" \
