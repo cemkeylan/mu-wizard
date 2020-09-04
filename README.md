@@ -57,9 +57,9 @@ Overrides
 --------------------------------------------------------------------------------
 
 Domain-level overrides are possible by adding a shell file to either the share
-directory (`/usr/local/share/mu-wizard/overrides` (depends on your prefix)) or
-the user configuration directory (`~/.config/mu4e/overrides`). See
-`overrides/protonmail.com` for an example override.
+directory (`/usr/local/share/mu-wizard/overrides`) or the user configuration
+directory (`~/.config/mu4e/overrides`). See `overrides/protonmail.com` for an
+example override. You can run `muw share` to learn your share directory.
 
 
 ### Protonmail users
