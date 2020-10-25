@@ -18,14 +18,12 @@
 (defvar mu4e-get-mail-command)
 (defvar mu4e-contexts)
 (defvar mu4e-sent-messages-behavior)
-(defvar config-home)
 
 (setq mu4e-get-mail-command       "mbsync -a"
       mail-user-agent             'mu4e-user-agent
       message-send-mail-function  'message-send-mail-with-sendmail
       sendmail-program            (executable-find "msmtp")
-      mu4e-sent-messages-behavior 'sent
-      config-home                 (or (getenv "XDG_CONFIG_HOME") "~/.config"))
+      mu4e-sent-messages-behavior 'sent)
 
 
 ;; Make mu4e-contexts an empty list.
@@ -33,7 +31,7 @@
 
 ;; Load user accounts.
 (dolist (file (directory-files
-               (expand-file-name "mu4e/accounts" config-home) t "\.el$" nil))
+               (expand-file-name "mu4e/accounts" (or (getenv "XDG_CONFIG_HOME") "~/.config")) t "\.el$" nil))
   (load file))
 
 (provide 'mu4e-config)
