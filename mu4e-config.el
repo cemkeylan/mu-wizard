@@ -24,7 +24,7 @@
       mail-user-agent             'mu4e-user-agent
       message-send-mail-function  'message-send-mail-with-sendmail
       sendmail-program            (executable-find "msmtp")
-      mu4e-sent-messages-behavior 'delete
+      mu4e-sent-messages-behavior 'sent
       config-home                 (or (getenv "XDG_CONFIG_HOME") "~/.config"))
 
 
