@@ -61,42 +61,36 @@ EOF
 }
 
 pm_ask() {
-    if [ "$(command -v pass)" ]; then
-        pass insert "$pmt"
-        password_command="pass show $pmt"
-    elif [ "$(command -v pash)" ]; then
-        # Disable 'generate password?' prompt. We need to create a file and run
-        # it, because the password manager needs to own the standard input.
-        sed 's/yn "Gen/false "Gen/g' "$(command -v pash)" >_
-        sh _ add "$pmt"
-        rm -f _
-        password_command="pash show $pmt"
-    elif [ "$(command -v pm)" ]; then
-        stty -echo
-        printf 'Enter your password: '; read -r pass
-        printf '\nEnter your password again: '; read -r pass2
-        printf '\n'
-        stty echo
-        if [ "$pass" = "$pass2" ]; then
-            pm add "$pmt" <<EOF
+    case ${pass_prog##*/} in
+        pass) pass insert "$pmt"
+              password_command="pass show $pmt" ;;
+        pash) sed 's/yn "Gen/false "Gen/g' "$(command -v pash)" >_
+              sh _ add "$pmt"
+              rm -f _
+              password_command="pash show $pmt" ;;
+        pm)   stty -echo
+              printf 'Enter your password: '; read -r pass
+              printf '\nEnter your password again: '; read -r pass2
+              printf '\n'
+              stty echo
+              if [ "$pass" = "$pass2" ]; then
+                  pm add "$pmt" <<EOF
 $pass
 EOF
-            password_command="pm show $pmt"
-        else
-            err "Passwords don't match"
-            return 1
-        fi
-    fi
+                  password_command="pm show $pmt"
+              else
+                  err "Passwords don't match"
+                  return 1
+              fi
+    esac
 }
 
 pm_del() {
-    if [ "$(command -v pass)" ]; then
-        pass rm -f "$pmt"
-    elif [ "$(command -v pash)" ]; then
-        yes | pash del "$pmt"
-    elif [ "$(command -v pm)" ]; then
-        pm del "$pmt"
-    fi > /dev/null 2>&1
+    case ${pass_prog##*/} in
+        pass) pass rm -f "$pmt" ;;
+        pash) yes | pash del "$pmt" ;;
+        pm)   pm del "$pmt"
+    esac >/dev/null 2>&1
 }
 
 test_connection() {
@@ -270,7 +264,7 @@ get_information() {
 }
 
 main() {
-    command -v pass >/dev/null || command -v pash || command -v pm ||
+    pass_prog=$(command -v pass || command -v pash || command -v pm) ||
         die "No applicable password manager found."
     command -v mbsync >/dev/null || die "mbsync must be installed for mu-wizard to work."
 
