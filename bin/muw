@@ -5,10 +5,18 @@ err() { printf 'err: %s\n' "$@" >&2 ;}
 die() { err "$@"; exit 1 ;}
 prompt() { printf '%s\n' "$1"; [ "$2" ] && printf '%s: ' "$2" ;}
 
+getbut() {
+    stty=$(stty -g)
+    stty -icanon -echo
+    dd bs=1 count=1 2>/dev/null
+    stty "$stty"
+}
+
 yesno() {
-    printf '%s\n' "$@"; printf '[y]es/[n]o: '
-    read -r ans
-    case "$ans" in [Yy]*) return 0; esac; return 1
+    printf '%s\n' "$@"; printf 'y/n: '
+    ans=$(getbut)
+    printf '%s\n' "$ans" >&2
+    case "$ans" in [Yy]) return 0; esac; return 1
 }
 
 delete() {
