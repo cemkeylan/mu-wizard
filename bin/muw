@@ -49,13 +49,14 @@ get_profiles() {
 }
 
 msmtp_header() {
-    mkdir -p "$config_home/msmtp"
+    mkdir -p "$config_home/msmtp" \
+             "${XDG_CACHE_HOME:=$HOME/.cache}/msmtp"
     cat <<EOF > "$config_home/msmtp/config"
 defaults
 auth on
 tls on
 tls_trust_file $sslcert
-logfile ~/.config/msmtp/msmtp.log
+logfile $XDG_CACHE_HOME/msmtp/msmtp.log
 EOF
 }
 
