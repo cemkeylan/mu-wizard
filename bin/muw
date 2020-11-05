@@ -321,7 +321,7 @@ main() {
             out "usage: ${0##*/} [action]" \
                 "mu-wizard, auto-configure email accounts for mu4e" \
                 "  Options:" \
-                "    [a]dd:    Add and aoutoconfigure an email address" \
+                "    [a]dd:    Add and autoconfigure an email address" \
                 "    [d]elete: Pick an account to delete" \
                 "    [l]ist:   List configured accounts" \
                 "    [p]urge:  Purge all configuration"
