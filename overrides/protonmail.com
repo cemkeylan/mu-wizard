@@ -1,4 +1,4 @@
-#!/bin/sh
+# -*- mode: sh; -*-
 # Override file for Protonmail
 ssltype=None
 imap=127.0.0.1
