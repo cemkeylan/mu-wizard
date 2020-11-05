@@ -22,8 +22,7 @@
 (setq mu4e-get-mail-command       "mbsync -a"
       mail-user-agent             'mu4e-user-agent
       message-send-mail-function  'message-send-mail-with-sendmail
-      sendmail-program            (executable-find "msmtp")
-      mu4e-sent-messages-behavior 'sent)
+      sendmail-program            (executable-find "msmtp"))
 
 
 ;; Make mu4e-contexts an empty list.
