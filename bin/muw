@@ -3,7 +3,23 @@
 out() { printf '%s\n' "$@" >&2 ;}
 err() { printf 'err: %s\n' "$@" >&2 ;}
 die() { err "$@"; exit 1 ;}
-prompt() { printf '%s\n' "$1"; [ "$2" ] && printf '%s: ' "$2" ;}
+prompt() {
+    # The first argument is used as the prompt, and will print as 'prompt: '.
+    # Any other arguments will be printed before prompt if they exist.
+    prompt=$1 ans=
+    [ "$2" ] && { shift 1; out "$@" ;}
+    printf '%s: ' "$prompt" >&2
+    read -r ans || return
+    printf %s "$ans"
+}
+prompt_noecho() {
+    # This is the same with the prompt() function except that it doesn't echo
+    # the user input to the terminal. It can be used to ask for passwords and
+    # other secret information.
+    stty=$(stty -g); stty -echo
+    prompt "$@"; printf '\n' >&2
+    stty "$stty"
+}
 
 getbut() {
     stty=$(stty -g)
@@ -68,11 +84,8 @@ pm_ask() {
               sh _ add "$pmt"
               rm -f _
               password_command="pash show $pmt" ;;
-        pm)   stty -echo
-              printf 'Enter your password: '; read -r pass
-              printf '\nEnter your password again: '; read -r pass2
-              printf '\n'
-              stty echo
+        pm)   pass=$(prompt_noecho "Enter your password")
+              pass2=$(prompt_noecho "Enter your password again")
               if [ "$pass" = "$pass2" ]; then
                   pm add "$pmt" <<EOF
 $pass
@@ -202,8 +215,8 @@ get_information() {
         sslcert=$file; break
     done
 
-    prompt "Insert the email address that you want to configure for mu4e" "Email"
-    read -r fulladdr
+    fulladdr=$(prompt Email \
+               "Insert the email address that you want to configure for mu4e")
 
     # Check the override directory for possible alterations of the
     # configuration. If the override is found on the configuration dirctory, it
@@ -228,37 +241,43 @@ get_information() {
             "IMAP:   $imap:$iport" \
             "SMTP:   $smtp:$sport"
     else
-        prompt "Insert the IMAP server for your email provider (excluding the port number)" "Server"
-        read -r imap
+        imap=$(prompt Server "Insert the IMAP server for your email provider" \
+            "(excluding the port number)")
 
-        prompt "What is your server's IMAP port number? (Usually 993)" "Port"
-        read -r iport
+        iport=$(prompt Port \
+            "What is your server's IMAP port number? (Usually 993)")
 
-        prompt "Insert the SMTP server for your email provider (excluding the port number)" "Server"
-        read -r smtp
+        smtp=$(prompt Server "Insert the SMTP server for your email provider" \
+            "(excluding the port number)")
 
-        prompt "What is your server's SMTP port number? (Usually 587 or 465)"
-        read -r sport
+        sport=$(prompt Port \
+            "What is your server's SMTP port number? (Usually 587)")
     fi
 
-    prompt "Enter the full name you want to be identified by on this account." "Real name"
-    read -r realname
 
-    prompt "Enter a short, one-word identifier for this email account that will distinguish them from any other accounts you add" "Account name"
-    read -r title
+    realname=$(prompt "Real name" \
+        "Enter your full name you want to be identified on this account.")
+
+    title=$(prompt "Account name" \
+        "Enter a short, one-word identifier for this email account that will" \
+        "distinguish them from any other accounts you add")
+
     while contains "$title" "$profiles"; do
-        prompt "Profile '$title' already exists, please specify a different name" "Account name"
-        read -r title
+        title=$(prompt "Account name" \
+        "Enter a short, one-word identifier for this email account that will" \
+        "distinguish them from any other accounts you add")
     done
 
-    prompt "If your account has a special username different from your address, insert it now. Otherwise leave this blank." "Login(?)"
-    read -r login
+    login=$(prompt "Login" \
+        "If your account has a special username different from your address," \
+        "insert it now. Otherwise leave this blank.")
 
     # If login is empty use fulladdr
     [ "$login" ] || login="$fulladdr"
 
-    prompt "If you want to limit the number of messages kept offline to a number, enter it below. Otherwise leave this blank." "Maximum messages"
-    read -r maxmes
+    maxmes=$(prompt "Maximum messages" \
+        "If you want to limit the number of messages kept offline to a number," \
+        "enter it below. Otherwise leave this blank.")
 
     case "$sport" in 465) starttlsoff="tls_starttls off"; esac
 }
