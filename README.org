@@ -23,7 +23,7 @@ account. It is still WIP. Expect breaking changes until the first release.
 - =isync= (for offline mail storage)
 - =mu=    (or =maildir-utils= depending on your distribution)
 - =msmtp= (for sending mails)
-- Password manager (=pass=, [[https://github.com/dylanaraps/pash][=pash=]], and [[https://github.com/cemkeylan/pm][=pm=]] is supported)
+- Password manager (=pass=, [[https://github.com/dylanaraps/pash][pash]], and [[https://github.com/cemkeylan/pm][pm]] is supported)
 
 * Installation
 
