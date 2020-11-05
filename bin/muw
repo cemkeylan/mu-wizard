@@ -30,10 +30,13 @@ getbut() {
 }
 
 yesno() {
+    # Function to ask the user yes/no questions. Returns 0 if the button
+    # received is Y/y, Returns 1 if the button received is N/n, and returns
+    # 2 if any other button is received.
     printf '%s\n' "$@"; printf 'y/n: '
     ans=$(getbut)
     printf '%s\n' "$ans" >&2
-    case "$ans" in [Yy]) return 0; esac; return 1
+    case "$ans" in Y|y) return 0;; N|n) return 1; esac; return 2
 }
 
 delete() {
