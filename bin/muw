@@ -198,7 +198,7 @@ get_information() {
     for file in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt \
                 /etc/certificates/cert.pem /etc/ssl/ca-bundle.pem /etc/ssl/cert.pem \
                 /etc/pki/tls/cacert.pem /usr/share/ca-certificates; do
-        [ -e "$file" ] || continue
+        [ -r "$file" ] || continue
         sslcert=$file; break
     done
 
