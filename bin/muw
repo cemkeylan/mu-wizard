@@ -22,8 +22,9 @@ prompt_noecho() {
 }
 
 getbut() {
-    stty=$(stty -g)
-    stty -icanon -echo
+    # This function can be used to get a single button input. No arguments
+    # necessary.
+    stty=$(stty -g); stty -icanon -echo
     dd bs=1 count=1 2>/dev/null
     stty "$stty"
 }
