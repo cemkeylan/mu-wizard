@@ -1,0 +1,107 @@
+#+TITLE: mu-wizard
+#+AUTHOR: Cem Keylan
+#+STARTUP: indent
+
+=mu-wizard= is a shell script to auto-configure email accounts for =mu4e=
+similar in function to =mutt-wizard=. It uses =isync= to synchronize mail
+accounts, =msmtp= to send mail and creates individual Lisp profiles for each
+account. It is still WIP. Expect breaking changes until the first release.
+
+* Table of Contents                                            :TOC:noexport:
+- [[#dependencies][Dependencies]]
+- [[#installation][Installation]]
+- [[#usage][Usage]]
+  - [[#emacs-configuration][Emacs Configuration]]
+  - [[#domains-file][Domains file]]
+  - [[#overrides][Overrides]]
+- [[#notes][Notes]]
+  - [[#protonmail][Protonmail]]
+  - [[#google][Google]]
+
+* Dependencies
+
+- =isync= (for offline mail storage)
+- =mu=    (or =maildir-utils= depending on your distribution)
+- =msmtp= (for sending mails)
+- Password manager (=pass=, [[https://github.com/dylanaraps/pash][=pash=]], and [[https://github.com/cemkeylan/pm][=pm=]] is supported)
+
+* Installation
+
+In order to install =mu-wizard=, clone this repository and build =mu-wizard=.
+
+#+BEGIN_SRC sh
+  git clone https://github.com/cemkeylan/mu-wizard.git
+  cd mu-wizard
+  make install
+#+END_SRC
+
+Users of Arch Linux based distributions can install =mu-wizard= through the AUR
+package [[https://aur.archlinux.org/packages/mu-wizard-git][mu-wizard-git]]. This package is not maintained by me.
+
+#+BEGIN_SRC sh
+  yay -S mu-wizard-git
+#+END_SRC
+
+* Usage
+
+The wizard is called by running ~muw~. The options below are available to use:
+
+- ~muw a~ :: *Add* and autoconfigure an email address
+- ~muw d~ :: Pick an account to *delete*
+- ~muw l~ :: *List* configured accounts
+- ~muw p~ :: *Purge* all configuration
+- ~muw s~ :: See your *share directory*
+
+** Emacs Configuration
+
+Emacs will not be loading the configurations, you will need to set it manually.
+In your init file, you may choose to load the configuration in the following
+ways.
+
+#+BEGIN_SRC emacs-lisp
+  (load-file "~/.config/mu4e/mu4e-config.el")
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (add-to-list 'load-path "~/.config/mu4e")
+  (require 'mu4e-config)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (use-package mu4e-config
+    :after mu4e
+    :load-path "~/.config/mu4e")
+#+END_SRC
+
+** Domains file
+
+=mu-wizard= doesn't come with a predefined =domains.csv= file, but it can use
+one if it is found on =/usr/share/mu-wizard/domains.csv= (or whatever your share
+directory is, see ~muw s~). =mu-wizard= also saves the domain information that
+you when creating an account on your configuration directory, so you don't have
+to retype every detail when creating a second account with the same domain.
+
+** Overrides
+
+Domain-level overrides are possible by adding a shell file to either the share
+directory or the user configuration directory. See [[file:overrides/protonmail.com][overrides/protonmail.com]]
+for an example override.
+
+* Notes
+
+** Protonmail
+
+=mu-wizard= supports protonmail. If you are using one of the default domains,
+you don't have to do anything. If you are using an alternative domain, you can
+link the protonmail.com override to your personal domain. Here is an example:
+
+#+BEGIN_SRC sh
+  ln -sf /usr/share/mu-wizard/overrides/protonmail.com $HOME/.config/mu4e/overrides/example.com
+#+END_SRC
+
+Keep in mind that you will need protonmail bridge in order to send mails.
+
+** Google
+
+Google requires you to enable less-secure access in order to receive mail. See
+[[https://support.google.com/accounts/answer/6010255][here]] for more information.
