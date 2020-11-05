@@ -27,7 +27,7 @@ The wizard is run with `muw`. The options bellow are availabe for usage with `mu
 - `muw d`: Pick an account to **delete**.
 - `muw l`: **List** configured accounts.
 - `muw p`: **Purge** all configuration.
-- `muw s`: See your **share** directory: command not found.
+- `muw s`: See your **share** directory.
 
 ## Emacs Configuration
 Emacs will not be loading the configurations, you will need to set it manually.
