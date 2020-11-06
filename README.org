@@ -17,6 +17,7 @@ account. It is still WIP. Expect breaking changes until the first release.
 - [[#notes][Notes]]
   - [[#protonmail][Protonmail]]
   - [[#google][Google]]
+  - [[#forcing-a-password-manager][Forcing a password manager]]
 
 * Dependencies
 
@@ -105,3 +106,13 @@ Keep in mind that you will need protonmail bridge in order to send mails.
 
 Google requires you to enable less-secure access in order to receive mail. See
 [[https://support.google.com/accounts/answer/6010255][here]] for more information.
+
+** Forcing a password manager
+
+Using the =$MUW_PWM= environment variable, you can specify which password
+manager to use. If you don't specify a password manager, ~muw~ will use it with
+the following order:
+
+1. ~pass~
+2. ~pash~
+3. ~pm~
