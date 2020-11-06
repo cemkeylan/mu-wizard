@@ -12,6 +12,14 @@ prompt() {
     read -r ans || return
     printf %s "$ans"
 }
+prompt_required() {
+    promptout=''; promptout=$(prompt "$@")
+    until [ "$promptout" ]; do
+        out "This is required."
+        promptout=$(prompt "$@")
+    done
+    printf %s "$promptout"
+}
 prompt_noecho() {
     # This is the same with the prompt() function except that it doesn't echo
     # the user input to the terminal. It can be used to ask for passwords and
@@ -220,7 +228,7 @@ get_information() {
         sslcert=$file; break
     done
 
-    fulladdr=$(prompt Email \
+    fulladdr=$(prompt_required Email \
                "Insert the email address that you want to configure for mu4e")
 
     # Check the override directory for possible alterations of the
@@ -263,12 +271,13 @@ get_information() {
     realname=$(prompt "Real name" \
         "Enter your full name you want to be identified on this account.")
 
-    title=$(prompt "Account name" \
+    title=$(prompt_required "Account name" \
         "Enter a short, one-word identifier for this email account that will" \
         "distinguish them from any other accounts you add")
 
     while contains "$title" "$profiles"; do
-        title=$(prompt "Account name" \
+        out "The title '$title' is already used."
+        title=$(prompt_required "Account name" \
         "Enter a short, one-word identifier for this email account that will" \
         "distinguish them from any other accounts you add")
     done
