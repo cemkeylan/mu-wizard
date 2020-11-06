@@ -288,7 +288,7 @@ get_information() {
 }
 
 main() {
-    pass_prog=$(command -v pass || command -v pash || command -v pm) ||
+    pass_prog=${MUW_PWM:-$(command -v pass || command -v pash || command -v pm)} ||
         die "No applicable password manager found."
     command -v mbsync >/dev/null || die "mbsync must be installed for mu-wizard to work."
 
