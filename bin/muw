@@ -63,6 +63,7 @@ contains() {
 sed_i() {
     # 'sed -i' like function without actually running it. This can be only used
     # for a single file, and the filename should always come last.
+    eval "[ -f \$$# ] || return 1"
     sed "$@" > _; for file; do :; done; mv _ "$file"
 }
 
