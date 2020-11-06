@@ -10,10 +10,8 @@ account. It is still WIP. Expect breaking changes until the first release.
 * Table of Contents                                            :TOC:noexport:
 - [[#dependencies][Dependencies]]
 - [[#installation][Installation]]
-- [[#initiating-password-managers][Initiating password managers]]
-  - [[#pass][pass]]
-  - [[#pash][pash]]
-  - [[#pm][pm]]
+  - [[#initiating-password-managers][Initiating password managers]]
+  - [[#initiating-mu][Initiating mu]]
 - [[#usage][Usage]]
   - [[#emacs-configuration][Emacs Configuration]]
   - [[#domains-file][Domains file]]
@@ -47,7 +45,7 @@ package [[https://aur.archlinux.org/packages/mu-wizard-git][mu-wizard-git]]. Thi
   yay -S mu-wizard-git
 #+END_SRC
 
-* Initiating password managers
+** Initiating password managers
 
 All of the password managers require some sort of initializing before you can
 store your passwords. This must be done *before* you run ~muw~ for the first
@@ -58,7 +56,7 @@ supported by ~muw~. You can create a GPG key by running ~gpg --gen-key~, or
 See the documentation of your password manager for more information on setting
 up your password manager, below are simple instructions enough to get you going.
 
-** pass
+*** pass
 
 In order to initiate pass, do the following:
 
@@ -66,7 +64,7 @@ In order to initiate pass, do the following:
   pass init yourgpgmail@example.com
 #+END_SRC
 
-** pash
+*** pash
 
 In order to use pash, add the following to your =.bashrc= (or what have you):
 
@@ -74,12 +72,22 @@ In order to use pash, add the following to your =.bashrc= (or what have you):
   export PASH_KEYID=yourgpgmail@example.com
 #+END_SRC
 
-** pm
+*** pm
 
 In order to use pm, add the following to your =.bashrc= (or what have you):
 
 #+BEGIN_SRC sh
   export PM_GPG_USER=yourgpgmail@example.com
+#+END_SRC
+
+** Initiating mu
+
+You will need to initiate mu before you can use it inside Emacs. You can simply
+run the following:
+
+#+BEGIN_SRC sh
+  mu init -m $HOME/.local/share/mail --my-address=mail@example.com
+  mu index
 #+END_SRC
 
 * Usage
