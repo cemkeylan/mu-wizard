@@ -334,7 +334,7 @@ main() {
 
             printf '%s,%s,%s,%s,%s' \
                    "${fulladdr##*@}" "$imap" "$iport" "$smtp" "$sport" >> "$confdir/domains.csv"
-            trap '' INT EXIT
+            trap - INT EXIT
             out "All done. You can now run 'mbsync $title' in order to sync this account."
             ;;
 
