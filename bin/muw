@@ -214,9 +214,10 @@ set_accountlisp() {
           (mu4e-sent-messages-behavior      . '$msg_behavior)
           (mu4e-drafts-folder               . "/$title/${drafts:=Drafts}")
           (mu4e-trash-folder                . "/$title/${trash:=Trash}")
+          (mu4e-sent-folder                 . "/$title/${sent:=Sent}")
           (mu4e-maildir-shortcuts           . (("/$title/${inbox:-INBOX}" . ?i)
                                                ("/$title/$drafts"         . ?d)
-                                               ("/$title/${sent:-Drafts}" . ?s)))
+                                               ("/$title/${sent:-Sent}" . ?s)))
           (user-full-name                   . "$realname"))))
 EOF
 
