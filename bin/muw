@@ -142,16 +142,13 @@ test_connection() {
 }
 
 get_domains() {
-    [ -f "$confdir/domains.csv" ] && {
-        if [ -f "$sharedir/domains.csv" ]; then
-            sort -u -o "$confdir/domains.csv" "$sharedir/domains.csv" "$confdir/domains.csv"
-        else
-            sort -u -o "$confdir/domains.csv" "$confdir/domains.csv"
-        fi
-        return
-    }
-    :> "$confdir/domains.csv"
-    [ -f "$sharedir/domains.csv" ] && cp "$sharedir/domains.csv" "$confdir/domains.csv"
+    if [ -f "$confdir/domains.csv" ]; then
+        { [ -f "$sharedir/domains.csv" ] && cat "$sharedir/domains.csv"
+          cat "$confdir/domains.csv" ;} | sort -uo "$confdir/domains.csv"
+    else
+        { [ -f "$sharedir/domains.csv" ] && cat "$sharedir/domains.csv"
+        } > "$confdir/domains.csv"
+    fi
 }
 
 set_mbsync() {
