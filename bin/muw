@@ -93,9 +93,10 @@ pm_ask() {
     case ${pass_prog##*/} in
         pass) pass insert "$pmt"
               password_command="pass show $pmt" ;;
-        pash) sed 's/yn "Gen/false "Gen/g' "$(command -v pash)" >_
+        pash) trap 'delete; rm -f _' EXIT INT
+              sed 's/yn "Gen/false "Gen/g' "$(command -v pash)" >_
               sh _ add "$pmt"
-              rm -f _
+              rm -f _; trap delete EXIT INT
               password_command="pash show $pmt" ;;
         pm)   pass=$(prompt_noecho "Enter your password")
               pass2=$(prompt_noecho "Enter your password again")
