@@ -117,7 +117,7 @@ pm_del() {
         pass) pass rm -f "$pmt" ;;
         pash) yes | pash del "$pmt" ;;
         pm)   pm del "$pmt"
-    esac >/dev/null 2>&1
+    esac >/dev/null 2>&1 ||:
 }
 
 test_connection() {
