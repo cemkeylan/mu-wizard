@@ -146,8 +146,8 @@ get_domains() {
         { [ -f "$sharedir/domains.csv" ] && cat "$sharedir/domains.csv"
           cat "$confdir/domains.csv" ;} | sort -uo "$confdir/domains.csv"
     else
-        { [ -f "$sharedir/domains.csv" ] && cat "$sharedir/domains.csv"
-        } > "$confdir/domains.csv"
+        if [ -f "$sharedir/domains.csv" ]; then
+            cat "$sharedir/domains.csv"; fi > "$confdir/domains.csv"
     fi
 }
 
