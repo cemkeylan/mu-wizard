@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 
 out() { printf '%s\n' "$@" >&2 ;}
 err() { printf 'err: %s\n' "$@" >&2 ;}
