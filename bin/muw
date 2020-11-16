@@ -208,7 +208,7 @@ set_accountlisp() {
                      :to "$fulladdr")))
   :vars '((user-mail-address                . "$fulladdr")
           (message-sendmail-extra-arguments . ("-a" "$title"))
-          (mu4e-sent-messages-behavior      . '$msg_behavior)
+          (mu4e-sent-messages-behavior      . $msg_behavior)
           (mu4e-drafts-folder               . "/$title/${drafts:=Drafts}")
           (mu4e-trash-folder                . "/$title/${trash:=Trash}")
           (mu4e-sent-folder                 . "/$title/${sent:=Sent}")
