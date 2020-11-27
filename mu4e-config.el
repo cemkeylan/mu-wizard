@@ -11,9 +11,7 @@
 ;; would be happy to receive PRs.
 
 ;;; Code:
-(require 'mu4e nil t)
-(require 'message)
-(require 'sendmail)
+(require 'mu4e)
 
 (defvar mu4e-get-mail-command)
 (defvar mu4e-contexts)
