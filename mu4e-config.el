@@ -13,10 +13,6 @@
 ;;; Code:
 (require 'mu4e)
 
-(defvar mu4e-get-mail-command)
-(defvar mu4e-contexts)
-(defvar mu4e-sent-messages-behavior)
-
 (setq mu4e-get-mail-command       "mbsync -a"
       mail-user-agent             'mu4e-user-agent
       message-send-mail-function  'message-send-mail-with-sendmail
@@ -24,7 +20,7 @@
 
 
 ;; Make mu4e-contexts an empty list.
-(setq mu4e-contexts ())
+(setq mu4e-contexts nil)
 
 ;; Load user accounts.
 (dolist (file (directory-files
