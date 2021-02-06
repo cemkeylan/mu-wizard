@@ -519,8 +519,8 @@ Flatten .
 
 Channel $title
 Expunge Both
-Far :$title-remote:
-Near  :$title-local:
+Far  :$title-remote:
+Near :$title-local:
 Patterns * !"[Gmail]/All Mail"
 Create Both
 SyncState *
