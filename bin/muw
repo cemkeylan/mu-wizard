@@ -32,7 +32,7 @@ parser_definition_add() {
     flag nocheck    -c --disable-checks    -- "Disable checking domains.csv for acquiring domain information"
     flag nooverride -o --disable-overrides -- "Disable checking override files for acquiring domain information"
     msg -- '' 'Any information not provided below, will be asked interactively.'
-    msg -- 'Accont options:'
+    msg -- 'Account options:'
     param fulladdr -a --address var:EMAIL  -- "Email address for account generation"
     option maxmes  -m --max-messages var:COUNT on:0 -- \
         "Maximum message COUNT to be kept offline, leave" "empty for unlimited."
