@@ -17,6 +17,7 @@ account. It is still WIP. Expect breaking changes until the first release.
   - [[#domains-file][Domains file]]
   - [[#overrides][Overrides]]
 - [[#notes][Notes]]
+  - [[#isync-deprecation-notice][Isync Deprecation Notice]]
   - [[#protonmail][Protonmail]]
   - [[#google][Google]]
   - [[#forcing-a-password-manager][Forcing a password manager]]
@@ -92,13 +93,23 @@ run the following:
 
 * Usage
 
-The wizard is called by running ~muw~. The options below are available to use:
+The wizard is called by running ~muw~. The commands below are available to use:
 
-- ~muw a~ :: *Add* and autoconfigure an email address
-- ~muw d~ :: Pick an account to *delete*
-- ~muw l~ :: *List* configured accounts
-- ~muw p~ :: *Purge* all configuration
-- ~muw s~ :: See your *share directory*
+#+BEGIN_SRC sh :results raw :exports results
+./bin/muw --help | sed -E '/^Commands:/,/^$/!d;/Commands:/d;/^$/d;s|^ *([a-zA-Z-]*) *(.*)$|- =\1= :: \2|'
+#+END_SRC
+
+#+RESULTS:
+- =add= :: Add and autoconfigure an email address
+- =delete= :: Pick an account to delete
+- =list= :: List configured accounts
+- =purge= :: Purge all configuration
+- =sync= :: Sync mail for accounts
+- =mu-init= :: Run 'mu init' with the configured accounts
+- =data= :: Output system data directory and exit
+
+  You can run ~muw COMMAND --help~ for learning more about the usage of the
+  command.
 
 ** Emacs Configuration
 
@@ -125,9 +136,9 @@ ways.
 
 =mu-wizard= doesn't come with a predefined =domains.csv= file, but it can use
 one if it is found on =/usr/share/mu-wizard/domains.csv= (or whatever your share
-directory is, see ~muw s~). =mu-wizard= also saves the domain information that
-you when creating an account on your configuration directory, so you don't have
-to retype every detail when creating a second account with the same domain.
+directory is, see ~muw data~). =mu-wizard= also saves the domain information
+that you when creating an account on your configuration directory, so you don't
+have to retype every detail when creating a second account with the same domain.
 
 ** Overrides
 
@@ -136,6 +147,21 @@ directory or the user configuration directory. See [[file:overrides/protonmail.c
 for an example override.
 
 * Notes
+
+** Isync Deprecation Notice
+
+=isync= version 1.4.0 outputs the following deprecation notice for the mbsync
+configuration.
+
+#+BEGIN_QUOTE
+Notice: Master/Slave are deprecated; use Far/Near instead.
+#+END_QUOTE
+
+You can fix this by running the command:
+
+#+begin_src sh
+sed -i 's|^Slave |Near |;s|^Master |Far |' "$HOME/.mbsyncrc"
+#+end_src
 
 ** Protonmail
 
