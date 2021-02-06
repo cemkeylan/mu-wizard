@@ -8,8 +8,6 @@ all:
 
 install:
 	mkdir -p ${DESTDIR}${BINDIR} ${DESTDIR}${MUSHAREDIR}
-	cp bin/mailsync ${DESTDIR}${BINDIR}/mailsync
-	chmod 755 ${DESTDIR}${BINDIR}/mailsync
 	sed 's|/usr/share/mu-wizard|${MUSHAREDIR}|g' < bin/muw > ${DESTDIR}${BINDIR}/muw
 	chmod 755 ${DESTDIR}${BINDIR}/muw
 	cp mu4e-config.el ${DESTDIR}${MUSHAREDIR}
@@ -20,7 +18,6 @@ install:
 		chmod 644 ${DESTDIR}${MUSHAREDIR}/overrides/$${override##*/}; done
 
 uninstall:
-	rm -rf ${DESTDIR}${BINDIR}/muw ${DESTDIR}${BINDIR}/mailsync \
-		${DESTDIR}${MUSHAREDIR}
+	rm -rf ${DESTDIR}${BINDIR}/muw ${DESTDIR}${MUSHAREDIR}
 
 .PHONY: all install uninstall
