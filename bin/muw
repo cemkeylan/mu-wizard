@@ -1,8 +1,342 @@
 #!/bin/sh -e
 
+parser_definition() {
+    setup REST help:usage -- "usage: ${0##*/} [cmd] [option...]"
+    msg -- '' 'mu-wizard, a helper script for configuring mu4e accounts' ''
+    msg -- 'Commands:'
+    cmd_a add    -- "Add and autoconfigure an email address"
+    cmd_a delete -- "Pick an account to delete"
+    cmd_a list   -- "List configured accounts"
+    cmd_a purge  -- "Purge all configuration"
+    cmd_a sync   -- "Sync mail for accounts"
+    cmd mu-init  -- "Run 'mu init' with the configured accounts"
+    cmd data     -- "Output system data directory and exit"
+    msg -- '' "Run '${0##*/} COMMAND --help' to see help information for the"
+    msg -- "given command."
+    global_options
+    msg -- 'Note:'
+    msg -- 'Once at least one account is added, you can run'
+    msg -- "'${0##*/} sync' to begin downloading your mail."
+}
+
+cmd_a() {
+    # Grab the first character of the subcommand, and add it to the option
+    # parser as a subcommand.
+    cmd "${1%${1#?}}" hidden:1; cmd "$@"
+}
+
+parser_definition_add() {
+    setup REST help:usage -- "usage: ${0##*/} add [option...]"
+    msg -- '' 'Add and autoconfigure an email address' ''
+    msg -- 'Options:'
+    flag nocheck    -c --disable-checks    -- "Disable checking domains.csv for acquiring domain information"
+    flag nooverride -o --disable-overrides -- "Disable checking override files for acquiring domain information"
+    msg -- '' 'Any information not provided below, will be asked interactively.'
+    msg -- 'Accont options:'
+    param fulladdr -a --address var:EMAIL  -- "Email address for account generation"
+    option maxmes  -m --max-messages var:COUNT on:0 -- \
+        "Maximum message COUNT to be kept offline, leave" "empty for unlimited."
+    param realname -r --real-name var:NAME -- "Your full name to be identified with the account"
+    param title    -t --title var:TITLE    -- "Unique account title"
+    option login   -l --login var:USERNAME -- "Use your full address if empty or USERNAME for" \
+                                              "your login name"
+    msg -- '' "Domain options: (setting either of these implies '-c -o')"
+    param imap     -i --imap var:SERVER    -- "IMAP server address"
+    param iport    -I --imap-port var:PORT -- "IMAP server port"
+    param smtp     -s --smtp var:SERVER    -- "SMTP server address"
+    param sport    -S --smtp-port var:PORT -- "SMTP server port"
+    global_options
+}
+
+parser_definition_delete() {
+    setup REST help:usage -- "usage: ${0##*/} delete [option...] [account...]"
+    msg -- '' 'Delete account' ''
+    flag noconfirm -y -- "Don't confirm account deletion"
+    global_options
+}
+
+parser_definition_list() {
+    global_options "usage: ${0##*/} list" "List configured accounts"
+}
+parser_definition_data() {
+    global_options "usage: ${0##*/} data" "Output system data directory"
+}
+parser_definition_sync() {
+    global_options "usage: ${0##*/} sync [account...]" "Sync mail for accounts"
+}
+parser_definition_mu() {
+    setup REST help:usage -- "usage: ${0##*/} mu-init"
+    msg -- '' 'Initiate/reinitate mu database' ''
+    msg -- 'Options:'
+    flag index -i -- "Index the mail directory after initiating the database"
+    global_options
+}
+
+parser_definition_purge() {
+    setup REST help:usage -- "usage: ${0##*/} purge [option...]"
+    msg -- '' 'Purge all configuration' ''
+    msg -- 'Options:'
+    flag noconfirm  -y -- "Don't confirm configuration purge"
+    flag keep_isync -i -- "Keep isync configuration"
+    flag keep_msmtp -m -- "Keep msmtp configuration"
+    global_options
+}
+
+global_options() {
+    [ "$1" ] && setup REST help:usage -- "$1" '' "$2"
+    msg -- '' 'Global options:'
+    disp :version -v --version -- "Display version information"
+    disp :usage  -h --help    -- "Print this help message"
+    msg -- ''
+}
+
+# shellcheck shell=sh disable=SC2016
+# [getoptions] License: Creative Commons Zero v1.0 Universal
+getoptions() {
+    _error='' _on=1 _off='' _export='' _plus='' _mode='' _alt='' _rest=''
+    _flags='' _nflags='' _opts='' _help='' _abbr='' _cmds='' _init=@empty IFS=' '
+
+    _0() { echo "$@"; }
+    for i in 1 2 3 4 5; do eval "_$i() { _$((${i-}-1)) \"   \$@\"; }"; done
+
+    quote() {
+        q="$2'" r=''
+        while [ "$q" ]; do r="$r${q%%\'*}'\''" && q=${q#*\'}; done
+        q="'${r%????}'" && q=${q#\'\'} && q=${q%\'\'}
+        eval "$1=\${q:-\"''\"}"
+    }
+    code() {
+        [ "${1#:}" = "$1" ] && c=3 || c=4
+        eval "[ ! \${$c:+x} ] || $2 \"\$$c\""
+    }
+    kv() { eval "${2-}${1%%:*}=\${1#*:}"; }
+    loop() { [ $# -gt 1 ] && [ "$2" != -- ]; }
+
+    invoke() { eval '"_$@"'; }
+    prehook() { invoke "$@"; }
+    for i in setup flag param option disp msg; do
+        eval "$i() { prehook $i \"\$@\"; }"
+    done
+
+    args() {
+        on=$_on off=$_off export=$_export init=$_init _hasarg=$1 && shift
+        while loop "$@" && shift; do
+            case $1 in
+                -?) [ "$_hasarg" ] && _opts="$_opts${1#-}" || _flags="$_flags${1#-}" ;;
+                +?) _plus=1 _nflags="$_nflags${1#+}" ;;
+                [!-+]*) kv "$1"
+            esac
+        done
+    }
+    defvar() {
+        case $init in
+            @none) : ;;
+            @export) code "$1" _0 "export $1" ;;
+            @empty) code "$1" _0 "${export:+export }$1=''" ;;
+            @unset) code "$1" _0 "unset $1 ||:" "unset OPTARG ||:; ${1#:}" ;;
+            *)
+                case $init in @*) eval "init=\"=\${${init#@}}\""; esac
+                case $init in [!=]*) _0 "$init"; return 0; esac
+                quote init "${init#=}"
+                code "$1" _0 "${export:+export }$1=$init" "OPTARG=$init; ${1#:}"
+        esac
+    }
+    _setup() {
+        [ "${1#-}" ] && _rest=$1
+        while loop "$@" && shift; do kv "$1" _; done
+    }
+    _flag() { args '' "$@"; defvar "$@"; }
+    _param() { args 1 "$@"; defvar "$@"; }
+    _option() { args 1 "$@"; defvar "$@"; }
+    _disp() { args '' "$@"; }
+    _msg() { args '' _ "$@"; }
+
+    cmd() { _mode=@ _cmds="$_cmds${_cmds:+|}'$1'"; }
+    "$@"
+    cmd() { :; }
+    _0 "${_rest:?}=''"
+
+    _0 "$2() {"
+    _1 'OPTIND=$(($#+1))'
+    _1 'while OPTARG= && [ $# -gt 0 ]; do'
+    [ "$_abbr" ] && getoptions_abbr "$@"
+
+    args() {
+        sw='' validate='' pattern='' counter='' on=$_on off=$_off export=$_export
+        while loop "$@" && shift; do
+            case $1 in
+                --\{no-\}*) i=${1#--?no-?}; sw="$sw${sw:+|}'--$i'|'--no-$i'" ;;
+                --with\{out\}-*) i=${1#--with?out?-}; sw="$sw${sw:+|}'--with-$i'|'--without-$i'" ;;
+                [-+]? | --*) sw="$sw${sw:+|}'$1'" ;;
+                *) kv "$1"
+            esac
+        done
+        quote on "$on"
+        quote off "$off"
+    }
+    setup() { :; }
+    _flag() {
+        args "$@"
+        [ "$counter" ] && on=1 off=-1 v="\$((\${$1:-0}+\$OPTARG))" || v=''
+        _3 "$sw)"
+        _4 '[ "${OPTARG:-}" ] && OPTARG=${OPTARG#*\=} && set "noarg" "$1" && break'
+        _4 "eval '[ \${OPTARG+x} ] &&:' && OPTARG=$on || OPTARG=$off"
+        valid "$1" "${v:-\$OPTARG}"
+        _4 ';;'
+    }
+    _param() {
+        args "$@"
+        _3 "$sw)"
+        _4 '[ $# -le 1 ] && set "required" "$1" && break'
+        _4 'OPTARG=$2'
+        valid "$1" '$OPTARG'
+        _4 'shift ;;'
+    }
+    _option() {
+        args "$@"
+        _3 "$sw)"
+        _4 'set -- "$1" "$@"'
+        _4 '[ ${OPTARG+x} ] && {'
+        _5 'case $1 in --no-*|--without-*) set "noarg" "${1%%\=*}"; break; esac'
+        _5 '[ "${OPTARG:-}" ] && { shift; OPTARG=$2; } ||' "OPTARG=$on"
+        _4 "} || OPTARG=$off"
+        valid "$1" '$OPTARG'
+        _4 'shift ;;'
+    }
+    valid() {
+        set -- "$validate" "$pattern" "$1" "$2"
+        [ "$1" ] && _4 "$1 || { set -- ${1%% *}:\$? \"\$1\" $1; break; }"
+        [ "$2" ] && {
+            _4 "case \$OPTARG in $2) ;;"
+            _5 '*) set "pattern:'"$2"'" "$1"; break'
+            _4 "esac"
+        }
+        code "$3" _4 "${export:+export }$3=\"$4\"" "${3#:}"
+    }
+    _disp() {
+        args "$@"
+        _3 "$sw)"
+        code "$1" _4 "echo \"\${$1}\"" "${1#:}"
+        _4 'exit 0 ;;'
+    }
+    _msg() { :; }
+
+    [ "$_alt" ] && _2 'case $1 in -[!-]?*) set -- "-$@"; esac'
+    _2 'case $1 in'
+    _wa() { _4 "eval 'set -- $1' \${1+'\"\$@\"'}"; }
+    _op() {
+        _3 "$1) OPTARG=\$1; shift"
+        _wa '"${OPTARG%"${OPTARG#??}"}" '"$2"'"${OPTARG#??}"'
+        _4 "$3"
+    }
+    _3 '--?*=*) OPTARG=$1; shift'
+    _wa '"${OPTARG%%\=*}" "${OPTARG#*\=}"'
+    _4 ';;'
+    _3 '--no-*|--without-*) unset OPTARG ;;'
+    [ "$_alt" ] || {
+        [ "$_opts" ] && _op "-[$_opts]?*" '' ';;'
+        [ ! "$_flags" ] || _op "-[$_flags]?*" - 'OPTARG= ;;'
+    }
+    [ "$_plus" ] && {
+        [ "$_nflags" ] && _op "+[$_nflags]?*" + 'unset OPTARG ;;'
+        _3 '+*) unset OPTARG ;;'
+    }
+    _2 'esac'
+    _2 'case $1 in'
+    "$@"
+    rest() {
+        _4 'while [ $# -gt 0 ]; do'
+        _5 "$_rest=\"\${$_rest}" '\"\${$(($OPTIND-$#))}\""'
+        _5 'shift'
+        _4 'done'
+        _4 'break ;;'
+    }
+    _3 '--)'
+    [ "$_mode" = @ ] || _4 'shift'
+    rest
+    _3 "[-${_plus:++}]?*)"
+    case $_mode in [=#]) rest ;; *) _4 'set "unknown" "$1"; break ;;'; esac
+    _3 '*)'
+    case $_mode in
+        @)
+        _4 "case \$1 in ${_cmds:-*}) ;;"
+        _5 '*) set "notcmd" "$1"; break'
+        _4 'esac'
+        rest ;;
+        [+#]) rest ;;
+        *) _4 "$_rest=\"\${$_rest}" '\"\${$(($OPTIND-$#))}\""'
+    esac
+    _2 'esac'
+    _2 'shift'
+    _1 'done'
+    _1 '[ $# -eq 0 ] && { OPTIND=1; unset OPTARG; return 0; }'
+    _1 'case $1 in'
+    _2 'unknown) set "Unrecognized option: $2" "$@" ;;'
+    _2 'noarg) set "Does not allow an argument: $2" "$@" ;;'
+    _2 'required) set "Requires an argument: $2" "$@" ;;'
+    _2 'pattern:*) set "Does not match the pattern (${1#*:}): $2" "$@" ;;'
+    _2 'notcmd) set "Not a command: $2" "$@" ;;'
+    _2 '*) set "Validation error ($1): $2" "$@"'
+    _1 'esac'
+    [ "$_error" ] && _1 "$_error" '"$@" >&2 || exit $?'
+    _1 'echo "$1" >&2'
+    _1 'exit 1'
+    _0 '}'
+
+    [ ! "$_help" ] || eval "shift 2; getoptions_help $1 $_help" ${3+'"$@"'}
+}
+# [getoptions_help] License: Creative Commons Zero v1.0 Universal
+getoptions_help() {
+    _width='30,12' _plus='' _leading='  '
+
+    pad() { p=$2; while [ ${#p} -lt "$3" ]; do p="$p "; done; eval "$1=\$p"; }
+    kv() { eval "${2-}${1%%:*}=\${1#*:}"; }
+    sw() { pad sw "$sw${sw:+, }" "$1"; sw="$sw$2"; }
+
+    args() {
+        _type=$1 var=${2%% *} sw='' label='' hidden='' && shift 2
+        while [ $# -gt 0 ] && i=$1 && shift && [ "$i" != -- ]; do
+            case $i in
+                --*) sw $((${_plus:+4}+4)) "$i" ;;
+                -?) sw 0 "$i" ;;
+                +?) [ ! "$_plus" ] || sw 4 "$i" ;;
+                *) [ "$_type" = setup ] && kv "$i" _; kv "$i"
+            esac
+        done
+        [ "$hidden" ] && return 0 || len=${_width%,*}
+
+        [ "$label" ] || case $_type in
+            setup | msg) label='' len=0 ;;
+            flag | disp) label="$sw " ;;
+            param) label="$sw $var " ;;
+            option) label="${sw}[=$var] "
+        esac
+        [ "$_type" = cmd ] && label=${label:-$var } len=${_width#*,}
+        pad label "${label:+$_leading}$label" "$len"
+        [ ${#label} -le "$len" ] && [ $# -gt 0 ] && label="$label$1" && shift
+        echo "$label"
+        pad label '' "$len"
+        for i; do echo "$label$i"; done
+    }
+
+    for i in setup flag param option disp 'msg -' cmd; do
+        eval "${i% *}() { args $i \"\$@\"; }"
+    done
+
+    echo "$2() {"
+    echo "cat<<'GETOPTIONSHERE'"
+    "$@"
+    echo "GETOPTIONSHERE"
+    echo "}"
+}
+
 out() { printf '%s\n' "$@" >&2 ;}
 err() { printf 'err: %s\n' "$@" >&2 ;}
 die() { err "$@"; exit 1 ;}
+version() { printf 'mu-wizard version: %s\n' unreleased ;}
+notify() {
+    notify-send -i mail-unread -a "mu-wizard" "$@"
+}
 prompt() {
     # The first argument is used as the prompt, and will print as 'prompt: '.
     # Any other arguments will be printed before prompt if they exist.
@@ -53,33 +387,44 @@ yesno() {
 }
 
 delete() {
-    rm -f "$accountdir/$title.el"
-    sed_i "/^IMAPStore $title-remote\$/,/^# End profile\$/d" "$HOME/.mbsyncrc"
-    sed_i "/^account $title\$/,/^# End profile\$/d" "$config_home/msmtp/config"
+    rm -f "$accountdir/$1.el"
+    sed_i "$HOME/.mbsyncrc" "/^IMAPStore $1-remote\$/,/^# End profile\$/d"
+    sed_i "$config_home/msmtp/config" "/^account $1\$/,/^# End profile\$/d"
     rm -f /tmp/mbsync-boxes
 }
 
-contains() {
-    # Check whether a list contains the given value
-    # Example: 'contains "a" "a b c d e f"' returns 0
-    case " $2 " in *" $1 "*) return 0; esac; return 1
+in_profiles() {
+    # Check whether the title is already a profile.
+    while read -r profile; do
+        [ "$profile" = "$1" ] && return 0
+    done <<EOF
+$(get_profiles)
+EOF
+    return 1
 }
 
 sed_i() {
-    # 'sed -i' like function without actually running it. This can be only used
-    # for a single file, and the filename should always come last.
-    eval "[ -f \$$# ] || return 1"
-    sed "$@" > _; for file; do :; done; mv _ "$file"
+    # POSIX compliant 'sed -i' like function. This can be only used for a single
+    # file, and the filename should always come first.
+    file=$1; shift
+    [ -f "$file" ] || die "$file: No such file or directory"
+    sed "$@" "$file" > _; cat _ > "$file"
+    rm -f _
 }
 
 get_profiles() {
     # Function to get all available profiles
-    unset profiles
-    for profile in "$accountdir"/*.el; do
-        [ -f "$profile" ] || continue
+    eval=$1
+    set --
+    for profile in "$accountdir/"*.el; do
         profile=${profile##*/}
-        profiles="${profile%.el} $profiles"
+        set -- "$@" "${profile%.el}"
     done
+    if [ "$eval" ]; then
+        printf "'%s' " "$@"
+    else
+        printf '%s\n' "$@"
+    fi
 }
 
 msmtp_header() {
@@ -98,10 +443,10 @@ pm_ask() {
     case ${pass_prog##*/} in
         pass) pass insert "$pmt"
               password_command="pass show $pmt" ;;
-        pash) trap 'delete; rm -f _' EXIT INT
+        pash) trap 'delete $title; rm -f _' EXIT INT
               sed 's/yn "Gen/false "Gen/g' "$(command -v pash)" >_
               sh _ add "$pmt"
-              rm -f _; trap delete EXIT INT
+              rm -f _; trap 'delete $title' EXIT INT
               password_command="pash show $pmt" ;;
         pm)   pass=$(prompt_noecho "Enter your password")
               pass2=$(prompt_noecho "Enter your password again")
@@ -126,7 +471,7 @@ pm_del() {
 }
 
 test_connection() {
-    mkdir -p "$maildir/$title"
+    mkdir -p "$MAILDIR/$title"
 
     # Since we are "Flattening" the inbox structure by replacing '/' with '.',
     # we need to also replace it in the 'mbsync -l' output by hand. See the
@@ -136,7 +481,7 @@ test_connection() {
           "or there are requirements for your account out of the control of mu-wizard."
     } | sed 's|/|.|g' > /tmp/mbsync-boxes
 
-    while read -r dir; do mkdir -p "$maildir/$title/${dir#/}"; done < /tmp/mbsync-boxes
+    while read -r dir; do mkdir -p "$MAILDIR/$title/${dir#/}"; done < /tmp/mbsync-boxes
 
     drafts=$(grep -i drafts /tmp/mbsync-boxes | sed 1q)
     trash=$(grep  -i trash  /tmp/mbsync-boxes | sed 1q)
@@ -233,12 +578,13 @@ get_information() {
         sslcert=$file; break
     done
 
-    fulladdr=$(prompt_required Email \
-               "Insert the email address that you want to configure for mu4e")
+    : "${fulladdr:=$(prompt_required Email \
+             "Insert the email address that you want to configure for mu4e")}"
 
     # Check the override directory for possible alterations of the
     # configuration. If the override is found on the configuration dirctory, it
     # will be used instead.
+    [ "$nooverride" ] ||
     for file in "$confdir/overrides/"* "$sharedir/overrides/"*; do
         [ -f "$sharedir/overrides/${fulladdr##*@}" ] && {
             domain=${fulladdr##*@}
@@ -248,7 +594,8 @@ get_information() {
         }
     done
 
-    [ "$domain" ] || while IFS=, read -r domain imap iport smtp sport; do
+    [ "$nocheck" ] || [ "$domain" ] ||
+    while IFS=, read -r domain imap iport smtp sport; do
         case "$domain" in "${fulladdr##*@}") break; esac
     done < "$confdir/domains.csv"
 
@@ -259,44 +606,44 @@ get_information() {
             "IMAP:   $imap:$iport" \
             "SMTP:   $smtp:$sport"
     else
-        imap=$(prompt Server "Insert the IMAP server for your email provider" \
-            "(excluding the port number)")
+        : "${imap:="$(prompt Server "Insert the IMAP server for your email provider" \
+            '(excluding the port number)')"}"
 
-        iport=$(prompt Port \
-            "What is your server's IMAP port number? (Usually 993)")
+        : "${iport:=$(prompt Port \
+            "What is your server's IMAP port number? (Usually 993)")}"
 
-        smtp=$(prompt Server "Insert the SMTP server for your email provider" \
-            "(excluding the port number)")
+        : "${smtp:=$(prompt Server "Insert the SMTP server for your email provider" \
+            "(excluding the port number)")}"
 
-        sport=$(prompt Port \
-            "What is your server's SMTP port number? (Usually 587)")
+        : "${sport:=$(prompt Port \
+            "What is your server's SMTP port number? (Usually 587)")}"
     fi
 
 
-    realname=$(prompt "Real name" \
-        "Enter your full name you want to be identified on this account.")
+    : "${realname:=$(prompt "Real name" \
+        "Enter your full name you want to be identified on this account.")}"
 
-    title=$(prompt_required "Account name" \
+    : "${title:=$(prompt_required "Account name" \
         "Enter a short, one-word identifier for this email account that will" \
-        "distinguish them from any other accounts you add")
+        "distinguish them from any other accounts you add")}"
 
-    while contains "$title" "$profiles"; do
+    while in_profiles "$title"; do
         out "The title '$title' is already used."
         title=$(prompt_required "Account name" \
         "Enter a short, one-word identifier for this email account that will" \
         "distinguish them from any other accounts you add")
     done
 
-    login=$(prompt "Login" \
+    : "${login:=$(prompt "Login" \
         "If your account has a special username different from your address," \
-        "insert it now. Otherwise leave this blank.")
+        "insert it now. Otherwise leave this blank.")}"
 
-    # If login is empty use fulladdr
-    [ "$login" ] || login="$fulladdr"
+    # If login is unspecified, use the full address
+    [ "${login:-1}" = 1 ] && login="$fulladdr"
 
-    maxmes=$(prompt "Maximum messages" \
+    : "${maxmes=$(prompt "Maximum messages" \
         "If you want to limit the number of messages kept offline to a number," \
-        "enter it below. Otherwise leave this blank.")
+        "enter it below. Otherwise leave this blank.")}"
 
     case "$sport" in 465) starttlsoff="tls_starttls off"; esac
 }
@@ -312,19 +659,29 @@ main() {
 
     mkdir -p "${config_home:=${XDG_CONFIG_HOME:-$HOME/.config}}" \
              "${confdir:=$config_home/mu4e}" \
+             "${cac_dir:=${XDG_CACHE_HOME:-$HOME/.cache}}" \
              "${accountdir:=$confdir/accounts}" \
-             "${maildir:=$HOME/.local/share/mail}"
+             "${MAILDIR:=${XDG_DATA_HOME:-$HOME/.local/share}/mail}"
 
-    get_profiles
+    export MAILDIR
 
-    case "$1" in
-        l|list) for profile in $profiles; do out "  $profile"; done ;;
+    eval "$(getoptions parser_definition parse)"
+    parse "$@"; eval set -- "$REST"
+    action=$1;  shift
 
+    case $action in
         a|add)
+            eval "$(getoptions parser_definition_add parse)"
+            parse "$@"; eval set -- "$REST"
+
+            # If any domain information is provided, disable checking domains.csv and
+            # overrides.
+            test -n "$imap" -o -n "$iport" -o -n "$smtp" -o -n "$sport" &&
+                nocheck=1 nooverride=1
             get_domains
             get_information
-            trap delete INT EXIT
-            pmt="mu-wizard-$title"
+            trap 'delete $title' INT EXIT
+            pmt="muw/$fulladdr"
             while :; do pm_del; pm_ask && break; done
             set_mbsync
             test_connection
@@ -336,41 +693,103 @@ main() {
             # so even if the user doesn't want to share the information in a git
             # repository, they can have it themselves when they may need it.
 
-            printf '%s,%s,%s,%s,%s' \
-                   "${fulladdr##*@}" "$imap" "$iport" "$smtp" "$sport" >> "$confdir/domains.csv"
+            printf '%s,%s,%s,%s,%s' "${fulladdr##*@}" "$imap" "$iport" "$smtp" "$sport" |
+                sort -uo "$confdir/domains.csv" "$confdir/domains.csv" -
             trap - INT EXIT
-            out "All done. You can now run 'mbsync $title' in order to sync this account."
+            out "All done. You can now run '${0##*/} sync $title' in order to sync this account."
             ;;
-
+        l|list)
+            eval "$(getoptions parser_definition_list parse)"
+            parse "$@"; eval set -- "$REST"
+            get_profiles
+            ;;
         d|delete)
-            out "Pick a profile to be deleted"
-            for profile in $profiles; do out "  $profile"; done
-            read -r title
-            contains "$title" "$profiles" || die "Profile '$title' doesn't exist."
-            yesno "Are you sure you want to delete '$title'?" && delete
+            eval "$(getoptions parser_definition_delete parse)"
+            parse "$@"; eval set -- "$REST"
+            [ "$1" ] || {
+                get_profiles
+                set -- "$(prompt Profile "Pick a profile to be deleted")"
+            }
+            for title; do
+                in_profiles "$title" || die "Profile '$title' doesn't exist."
+                yesno "Are you sure you want to delete '$title'?" || exit 1
+                delete "$title"
+            done
             ;;
         p|purge)
+            eval "$(getoptions parser_definition_purge parse)"
+            parse "$@"; eval set -- "$REST"
             yesno "Are you sure you want to delete all account data?" || exit 1
             rm -rf "$HOME/.mbsyncrc" "$confdir" "$config_home/msmtp"
             ;;
-        s|share)
-            # Output the share directory and exit.
-            printf '%s\n' "$sharedir" ;;
-        ''|--help|-h)
-            out "usage: ${0##*/} [action]" \
-                "mu-wizard, auto-configure email accounts for mu4e" \
-                "  Options:" \
-                "    [a]dd:    Add and autoconfigure an email address" \
-                "    [d]elete: Pick an account to delete" \
-                "    [l]ist:   List configured accounts" \
-                "    [p]urge:  Purge all configuration"
-                "    [s]hare:  See your share directory" "" \
-                "NOTE: Once at least one account is added, you can run" \
-                "'mbsync -a' to begin downloading mail."
-            ;;
-        *) die "Unknown action '$1'"
-    esac
+        s|sync)
+            lastsync=''
+            syncfile=$cac_dir/muw-lastsync
+            mu_format="$(printf 'f\ts')"
+            eval "$(getoptions parser_definition_sync parse)"
+            parse "$@"; eval set -- "$REST"
+            pgrep -x mbsync >/dev/null && die "mbsync is already running."
+            [ "$1" ] || eval set -- "$(get_profiles eval)"
+            for acc; do in_profiles "$acc" || die "Invalid account: '$acc'"; done
+            for acc; do mbsync "${acc##*/}" & done; wait
+            for acc; do
+                newcount=$(
+                    if [ -f "$syncfile" ]; then
+                        find "$MAILDIR/$acc/"*/new -type f -newer "$syncfile"
+                    else
+                        find "$MAILDIR/$acc/"*/new -type f
+                    fi | wc -l
+                )
+                [ "$newcount" -gt 0 ] &&
+                    notify "mu-wizard" "$newcount new mail in '$acc' account."
+            done
 
+            [ -f "$syncfile" ] &&
+                lastsync=d:$(date -r "$syncfile" "+%Y-%m-%dT%H:%M..")
+
+            touch "$syncfile"
+
+            # Update mu index, first try using Emacs and fallback to using mu itself
+            emacsclient -e "(mu4e-update-index)" >/dev/null 2>&1 || mu index
+
+            # Send notification for new unread mails. Here is an explanation of
+            # what this does:
+            #
+            # --skip-dups           - Skip duplicates
+            # 'g:u'                 - Find unread email
+            # '$lastsync'           - Received after the last synchronization
+            # -s date --reverse     - Reverse the emails by date
+            # -f "$format" - Get 'from' and 'subject' fields, tab seperated
+            mu find --skip-dups g:u "$lastsync" -s d --reverse -f "$mu_format" 2>/dev/null |
+                while IFS=$(printf '\t') read -r from subject; do
+
+                    # Only display the name, not the email address. Remove
+                    # trailing whitespace, and quotation marks if there are any.
+                    from=${from%%\<*} from=${from%"${from##*[!\ ]}"}
+                    from=${from#\"} from=${from%\"}
+
+                    notify "$from" "$subject"
+                done
+            ;;
+        mu-init)
+            eval "$(getoptions parser_definition_mu parse)"
+            parse "$@"; set --
+            for account in "$accountdir/"*.el; do
+                [ -f "$account" ] || continue
+                set -- "$@" "--my-address=$(sed -n 's|"[^"]*$||;/user-mail-address/s|^.*"||p' "$account")"
+            done
+            [ "$1" ] || die "No address could be found, did you add any accounts?"
+            mu init -m "$MAILDIR" "$@"
+
+            # The 'index' variable is declared and assigned by the parser
+            # shellcheck disable=2154
+            [ -z "$index" ] || mu index
+            ;;
+        data)
+            eval "$(getoptions parser_definition_data parse)"
+            parse "$@"; eval set -- "$REST"
+            printf '%s\n' "$sharedir"
+    esac
 }
 
 main "$@"
