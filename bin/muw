@@ -40,7 +40,12 @@ getbut() {
 yesno() {
     # Function to ask the user yes/no questions. Returns 0 if the button
     # received is Y/y, Returns 1 if the button received is N/n, and returns
-    # 2 if any other button is received.
+    # 2 if any other button is received. If the noconfirm option is set from
+    # the options, do not ask anything.
+    #
+    # The 'noconfirm' variable is declared and assigned by the option parser.
+    # shellcheck disable=2154
+    [ "$noconfirm" ] && return 0
     printf '%s\n' "$@"; printf 'y/n: '
     ans=$(getbut)
     printf '%s\n' "$ans" >&2
