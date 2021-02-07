@@ -476,10 +476,14 @@ test_connection() {
     # Since we are "Flattening" the inbox structure by replacing '/' with '.',
     # we need to also replace it in the 'mbsync -l' output by hand. See the
     # Flatten section on mbsync(1).
-    { mbsync -l "$title" || die "Log-on not successful." \
-          "It seems that either you have inputted the wrong password or server settings," \
-          "or there are requirements for your account out of the control of mu-wizard."
-    } | sed 's|/|.|g' > /tmp/mbsync-boxes
+    { mbsync -l "$title" || {
+          err "Log-on not successful." \
+          "It seems that either you have inputted the wrong password or server" \
+          "settings, or there are requirements for your account out of the" \
+          "control of mu-wizard."
+          delete "$title"
+          kill 0
+    } } | sed 's|/|.|g' > /tmp/mbsync-boxes
 
     while read -r dir; do mkdir -p "$MAILDIR/$title/${dir#/}"; done < /tmp/mbsync-boxes
 
