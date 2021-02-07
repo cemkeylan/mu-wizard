@@ -487,10 +487,10 @@ test_connection() {
 
     while read -r dir; do mkdir -p "$MAILDIR/$title/${dir#/}"; done < /tmp/mbsync-boxes
 
-    drafts=$(grep -i drafts /tmp/mbsync-boxes | sed 1q)
-    trash=$(grep  -i trash  /tmp/mbsync-boxes | sed 1q)
-    inbox=$(grep  -i inbox  /tmp/mbsync-boxes | sed 1q)
-    sent=$(grep   -i sent   /tmp/mbsync-boxes | sed 1q)
+    drafts=$(sed -n '/[Dd][Rr][Aa][Ff][Tt][Ss]/{p;q}' /tmp/mbsync-boxes)
+    trash=$(sed  -n '/[Tt][Rr][Aa][Ss][Hh]/{p;q}'     /tmp/mbsync-boxes)
+    inbox=$(sed  -n '/[Ii][Nn][Bb][Oo][Xx]/{p;q}'     /tmp/mbsync-boxes)
+    sent=$(sed   -n '/[Ss][Ee][Nn][Tt]/{p;q}'         /tmp/mbsync-boxes)
 
     rm -f /tmp/mbsync-boxes
 }
