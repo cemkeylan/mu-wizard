@@ -523,8 +523,8 @@ Flatten .
 
 Channel $title
 Expunge Both
-Far  :$title-remote:
-Near :$title-local:
+$isync_far  :$title-remote:
+$isync_near :$title-local:
 Patterns * !"[Gmail]/All Mail"
 Create Both
 SyncState *
@@ -668,6 +668,17 @@ main() {
              "${MAILDIR:=${XDG_DATA_HOME:-$HOME/.local/share}/mail}"
 
     export MAILDIR
+
+    # isync > 1.4.0 depracates the terms Master/Slave, and replaces them with
+    # Far/Near. Check the version by looking at 'mbsync --version' output and
+    # use the newer syntax if available.
+    isync_version=$(mbsync --version)
+    isync_version=${isync_version##* } isync_version=${isync_version%.*}
+    if [ "${isync_version%%.*}" -gt 1 ] || [ "${isync_version#*.}" -ge 4 ]; then
+        isync_far=Far isync_near=Near
+    else
+        isync_far=Master isync_near=Slave
+    fi
 
     eval "$(getoptions parser_definition parse)"
     parse "$@"; eval set -- "$REST"
