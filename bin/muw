@@ -791,7 +791,7 @@ main() {
             parse "$@"; set --
             for account in "$accountdir/"*.el; do
                 [ -f "$account" ] || continue
-                set -- "$@" "--my-address=$(sed -n 's|"[^"]*$||;/user-mail-address/s|^.*"||p' "$account")"
+                set -- "$@" "--my-address=$(sed -n 's|"[^"]*$||;/user-mail-address/{s|^.*"||p;q}' "$account")"
             done
             [ "$1" ] || die "No address could be found, did you add any accounts?"
             mu init -m "$MAILDIR" "$@"
