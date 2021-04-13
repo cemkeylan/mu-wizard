@@ -1,0 +1,125 @@
+.Dd Feb 27, 2021
+.Dt muw-add 1
+.Sh NAME
+.Nm muw add
+.Nd create new account configuration for muw
+.Sh SYNOPSIS
+.Nm
+.Op Fl chov
+.Op Fl a Ar EMAIL
+.Op Fl m Op Ar =COUNT
+.Op Fl r Ar NAME
+.Op Fl t Ar TITLE
+.Op Fl l Op Ar =USERNAME
+.Op Fl i Ar SERVER
+.Op Fl I Ar PORT
+.Op Fl s Ar SERVER
+.Op Fl S Ar PORT
+.Sh DESCRIPTION
+.Nm
+can be used to add and configure a maill acount to be used with
+.Sy mu4e .
+When you run
+.Nm
+it will start an interactive setup wizard that will receive input to configure
+certain options.
+.Nm
+can also be called with certain flags to configure options without requiring the
+interactive wizard. Those are:
+.Bl -tag
+.It Fl c, -disable-checks
+Disable checking
+.Pa domains.csv
+for acquiring domain information.
+.It Fl o, -disable-overrides
+Disable checking override files for acquiring domain information.
+.It Fl a, -address Ar EMAIL
+Email address for account generation.
+.It Fl m, -max-messages Op Ar =COUNT
+Maximum message COUNT to be kept offline, leave empty for unlimited.
+.It Fl r, -real-name Ar NAME
+You full name to be identified with the account.
+.It Fl t, -title Ar TITLE
+Unique account title
+.It Fl l, -login Op Ar =USERNAME
+Use your full address if empty or USERNAME for your login name
+.It Fl i, -imap Ar SERVER
+IMAP server address
+.It Fl I, -imap-port Ar PORT
+IMAP server port
+.It Fl s, -smtp Ar SERVER
+SMTP server address
+.It Fl S, -smtp-port Ar PORT
+SMTP server port
+.It Fl v, -version
+Display version information
+.It Fl h, -help
+Print this help message
+.Pp
+For each account set up,
+.Nm muw
+will create configurations for
+.Sy msmtp , isync
+.Sh PASSWORD MANAGERS
+.Pp
+.Nm muw
+supports the usage of three password managers, these are:
+.Bl -dash -offset indent -compact
+.It
+.Lk https://passwordstore.org pass
+.It
+.Lk https://github.com/dylanaraps/pash pash
+.It
+.Lk https://github.com/cemkeylan/pm pm
+.El
+.Pp
+.Nm muw
+will use the first password manager found as the order above, and the password
+manager found during the setup wizard will always be the one used for
+authentication
+.Pq unless changed in both msmtp and isync configuration files .
+.Pp
+If you have, for some reason, have multiple password managers on your system,
+you can force which one to use by setting the
+.Va MUW_PWM
+environment variable to the password manager you want to use.
+.Sh OVERRIDING THE WIZARD
+It is possible to override the behaviour of built-in functions in order to
+achive domain-level control. This is usually not needed, but can be done for
+domains that require non-standard configuration, such as ProtonMail.
+.Pp
+If you need to override your email setup, you can create an override file, which
+is a shell script, and place it to either
+.Pa ~/.config/mu4e/overrides/example.com
+or
+.Pa $SHAREDIR/overrides/example.com .
+You can learn what your
+.Va $SHAREDIR
+is by running
+.Ql muw data .
+.Pp
+The default installation has override configurations for
+.Lk gmail.com ,
+.Lk protonmail.com ,
+.Lk pm.me ,
+and
+.Lk protonmail.ch .
+.Sh AUTHOR
+.An Cem Keylan Aq Mt cem@ckyln.com
+.Sh COPYING
+Copyright (c) 2020-2021 Cem Keylan
+.Pp
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+.Pp
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+.Pp
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see
+.Lk https://www.gnu.org/licenses/ .
+.Sh SEE ALSO
+.Xr muw 1
