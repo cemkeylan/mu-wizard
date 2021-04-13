@@ -97,8 +97,8 @@ The wizard is called by running ~muw~. The commands below are available to use:
 - =mu-init= :: Run 'mu init' with the configured accounts
 - =data= :: Output system data directory and exit
 
-  You can run ~muw COMMAND --help~ for learning more about the usage of the
-  command.
+You can run ~muw COMMAND --help~ for learning more about the usage of the
+command. The entire documentation can be found on manual pages.
 
 ** Emacs Configuration
 
