@@ -1,0 +1,56 @@
+.Dd Apr 13, 2021
+.Dt muw 1
+.Sh NAME
+.Nm muw
+.Nd easily configure mu4e accounts
+.Sh SYNOPSIS
+.Nm
+.Op Ar cmd
+.Op Ar option...
+.Sh DESCRIPTION
+.Nm
+is a program to create, delete, and otherwise manage email accounts to be used
+with mu4e.
+.Nm
+uses programs such as
+.Sy isync ,
+.Sy msmtp
+.Pp
+The following subcommands are available:
+.Bl -tag -width 8n -offset indent
+.It add
+Add and autoconfigure an email address
+.It delete
+Pick an account to delete
+.It list
+List configured accounts
+.It purge
+Purge all configuration
+.It sync
+Sync mail for accounts
+.It mu-init
+Run 'mu init' with the configured accounts
+.It data
+Output system data directory and exit
+.El
+.Sh AUTHOR
+.An Cem Keylan Aq Mt cem@ckyln.com
+.Sh COPYING
+Copyright (c) 2020-2021 Cem Keylan
+.Pp
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+.Pp
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+.Pp
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see
+.Lk https://www.gnu.org/licenses/ .
+.Sh SEE ALSO
+.Xr muw-add 1
+.Xr mbsync  1
+.Xr msmtp   1
