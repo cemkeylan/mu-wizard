@@ -11,7 +11,6 @@ account. It is still WIP. Expect breaking changes until the first release.
 - [[#dependencies][Dependencies]]
 - [[#installation][Installation]]
   - [[#initiating-password-managers][Initiating password managers]]
-  - [[#initiating-mu][Initiating mu]]
 - [[#usage][Usage]]
   - [[#emacs-configuration][Emacs Configuration]]
   - [[#domains-file][Domains file]]
@@ -79,16 +78,6 @@ In order to use pm, add the following to your =.bashrc= (or what have you):
 
 #+BEGIN_SRC sh
   export PM_GPG_USER=yourgpgmail@example.com
-#+END_SRC
-
-** Initiating mu
-
-You will need to initiate mu before you can use it inside Emacs. You can simply
-run the following:
-
-#+BEGIN_SRC sh
-  mu init -m $HOME/.local/share/mail --my-address=mail@example.com
-  mu index
 #+END_SRC
 
 * Usage
