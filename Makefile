@@ -1,23 +1,22 @@
 PREFIX     = /usr/local
 BINDIR     = ${PREFIX}/bin
 SHAREDIR   = ${PREFIX}/share
+MANDIR     = ${SHAREDIR}/man
+MAN1       = ${MANDIR}/man1
 MUSHAREDIR = ${SHAREDIR}/mu-wizard
+INSTALLSH  = ./tools/install.sh
 
 all:
 	@echo "Run 'make install' to install mu-wizard."
 
 install:
-	mkdir -p ${DESTDIR}${BINDIR} ${DESTDIR}${MUSHAREDIR}
-	sed 's|/usr/share/mu-wizard|${MUSHAREDIR}|g' < bin/muw > ${DESTDIR}${BINDIR}/muw
-	chmod 755 ${DESTDIR}${BINDIR}/muw
-	cp mu4e-config.el ${DESTDIR}${MUSHAREDIR}
-	chmod 644 ${DESTDIR}${MUSHAREDIR}/mu4e-config.el
-	mkdir -p ${DESTDIR}${MUSHAREDIR}/overrides
-	for override in overrides/*; do\
-		cp $${override} ${DESTDIR}${MUSHAREDIR}/overrides/$${override##*/}; \
-		chmod 644 ${DESTDIR}${MUSHAREDIR}/overrides/$${override##*/}; done
+	${INSTALLSH} -Dm755 -s 's|/usr/share/mu-wizard|${MUSHAREDIR}|g' bin/muw ${DESTDIR}${BINDIR}/muw
+	${INSTALLSH} -Dm644 mu4e-config.el ${DESTDIR}${MUSHAREDIR}/mu4e-config.el
+	${INSTALLSH} -Dm644 -t ${DESTDIR}${MUSHAREDIR}/overrides overrides/*
+	${INSTALLSH} -Dm644 -t ${DESTDIR}${MAN1} man/*.1
 
 uninstall:
 	rm -rf ${DESTDIR}${BINDIR}/muw ${DESTDIR}${MUSHAREDIR}
+	for man in man/*; do rm -f ${DESTDIR}${MANDIR}/man$${man##*.}/$${man##*/}; done
 
 .PHONY: all install uninstall
