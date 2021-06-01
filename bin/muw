@@ -331,7 +331,7 @@ getoptions_help() {
 }
 
 out() { printf '%s\n' "$@" >&2 ;}
-err() { printf 'err: %s\n' "$@" >&2 ;}
+err() { printf '\033[1m%s\033[m\n' "$@" >&2 ;}
 die() { err "$@"; exit 1 ;}
 version() { printf 'mu-wizard version: %s\n' unreleased ;}
 notify() {
