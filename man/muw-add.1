@@ -1,4 +1,4 @@
-.Dd Apr 13, 2021
+.Dd Jun 01, 2021
 .Dt muw-add 1
 .Sh NAME
 .Nm muw add
@@ -104,6 +104,41 @@ The default installation has override configurations for
 .Lk pm.me ,
 and
 .Lk protonmail.ch .
+.Sh CA CERTIFICATES
+Distros usually provide different methods of obtaining CA Certificate files. If
+you think you have a CA Certificate on a different path than what is searched,
+you can manually specify the location of the file by setting the
+.Ev MUW_CACERT
+environment variable to the location of the certificate file.
+.Bd -offset indent -literal
+export MUW_CACERT=/path/to/cacert.pem
+.Ed
+This manual mentions some of the ways I know of installing CA Certificates, and
+also a manual way of doing it. If you want to add your distribution to this
+manual, feel free to do so by creating an issue on the repository.
+.Ss Debian-based distros
+You require the package named
+.Sy ca-certificates .
+After you obtain the package, you can run:
+.Bd -offset indent -literal
+/usr/sbin/update-ca-certificates
+.Ed
+.Ss Carbs Linux
+If you are using Carbs Linux, it is highly likely that you already have CA
+Certificate files installed by a post-install script from the
+.Sy libressl
+package. However, you can still manually install/update the certificate by
+running
+.Bd -offset indent -literal
+/etc/ssl/update-certdata.sh
+.Ed
+.Ss Manually installing CA Certificates
+If none of these ways mentioned above are fitting for you, you can manually
+download the CA Certificates with wget or curl.
+.Bd -offset indent -literal
+mkdir -p /etc/ssl
+curl -Lo /etc/ssl/cert.pem https://curl.haxx.se/ca/cacert.pem
+.Ed
 .Sh AUTHOR
 .An Cem Keylan Aq Mt cem@ckyln.com
 .Sh COPYING
