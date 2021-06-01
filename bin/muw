@@ -592,8 +592,8 @@ get_information() {
     # If no certificate file was found, exit and notify the user.
     [ -r "$cacert" ] ||
         die "No proper CA Certificate file could be found. There are numerous ways of" \
-            "obtaining it, and those can differ for each distro. You can see the muw(1)"\
-            "manual page to learn more."
+            "obtaining it, and those can differ for each distro. You can see the" \
+            "CA CERTIFICATES section on the muw-add(1) manual page to learn more."
 
     : "${fulladdr:=$(prompt_required Email \
              "Insert the email address that you want to configure for mu4e")}"
