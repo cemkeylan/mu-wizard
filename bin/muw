@@ -434,7 +434,7 @@ msmtp_header() {
 defaults
 auth on
 tls on
-tls_trust_file $sslcert
+tls_trust_file $cacert
 logfile $XDG_CACHE_HOME/msmtp/msmtp.log
 EOF
 }
@@ -513,7 +513,7 @@ Port $iport
 User $login
 PassCmd "$password_command"
 SSLType $ssltype
-CertificateFile $sslcert
+CertificateFile $cacert
 
 MaildirStore $title-local
 Subfolders Verbatim
@@ -575,12 +575,25 @@ EOF
 }
 
 get_information() {
-    for file in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt \
+
+    # Try to find a CA Certificate file. We want to prioritise the '$MUW_CACERT'
+    # variable here.
+    if [ "$MUW_CACERT" ]; then
+        cacert=$MUW_CACERT
+    else
+        for file in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt \
                 /etc/certificates/cert.pem /etc/ssl/ca-bundle.pem /etc/ssl/cert.pem \
                 /etc/pki/tls/cacert.pem /usr/share/ca-certificates; do
-        [ -r "$file" ] || continue
-        sslcert=$file; break
-    done
+            [ -r "$file" ] || continue
+            cacert=$file; break
+        done
+    fi
+
+    # If no certificate file was found, exit and notify the user.
+    [ -r "$cacert" ] ||
+        die "No proper CA Certificate file could be found. There are numerous ways of" \
+            "obtaining it, and those can differ for each distro. You can see the muw(1)"\
+            "manual page to learn more."
 
     : "${fulladdr:=$(prompt_required Email \
              "Insert the email address that you want to configure for mu4e")}"
