@@ -1,0 +1,39 @@
+.Dd Jun 02, 2021
+.Dt muw-sync 1
+.Sh NAME
+.Nm muw sync
+.Nd synchronize mailboxes for configured accounts
+.Sh SYNOPSIS
+.Nm
+.Op Ar account...
+.Sh DESCRIPTION
+.Nm
+is a wrapping operation for fetching mailboxes using
+.Xr isync 1
+and updating the index for the
+.Xr mu 1
+database.
+.Pp
+If the program is given arguments, it will interpret them as profile names and
+will sync only those profiles. It will otherwise sync all profiles managed under
+.Sy mu-wizard .
+.Sh AUTHOR
+.An Cem Keylan Aq Mt cem@ckyln.com
+.Sh COPYING
+Copyright (c) 2020-2021 Cem Keylan
+.Pp
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+.Pp
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+.Pp
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see
+.Lk https://www.gnu.org/licenses/ .
+.Sh SEE ALSO
+.Xr muw 1
+.Xr muw-add 1

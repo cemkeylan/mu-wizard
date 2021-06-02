@@ -1,0 +1,42 @@
+.Dd Jun 02, 2021
+.Dt muw-delete 1
+.Sh NAME
+.Nm muw delete
+.Nd delete account configuration from muw
+.Sh SYNOPSIS
+.Nm
+.Op Fl yhv
+.Op Ar account...
+.Sh DESCRIPTION
+.Nm
+can be used to remove given account configurations from muw, if none is given
+the program will ask which configuration to delete interactively. The program
+accepts the following flags:
+.Bl -tag -offset indent
+.It Fl y
+Don't confirm account deletion
+.It Fl v , -version
+Display version information
+.It Fl h , -help
+Display usage information
+.El
+.Sh AUTHOR
+.An Cem Keylan Aq Mt cem@ckyln.com
+.Sh COPYING
+Copyright (c) 2020-2021 Cem Keylan
+.Pp
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+.Pp
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+.Pp
+You should have received a copy of the GNU General Public License along with
+this program.  If not, see
+.Lk https://www.gnu.org/licenses/ .
+.Sh SEE ALSO
+.Xr muw 1
+.Xr muw-add 1
