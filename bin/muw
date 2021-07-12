@@ -536,7 +536,11 @@ EOF
 }
 
 set_msmtp() {
-    [ -f "$config_home/msmtp/config" ] || msmtp_header
+    # 'A && B || C' is intentional behaviour here. We want all of these checks
+    # to pass.
+    # shellcheck disable=2015
+    [ -f "$config_home/msmtp/config" ] &&
+    [ -s "$config_home/msmtp/config" ] || msmtp_header
 
     cat <<EOF >> "$config_home/msmtp/config"
 account $title
