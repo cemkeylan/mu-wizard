@@ -512,6 +512,7 @@ Host $imap
 Port $iport
 User $login
 PassCmd "$password_command"
+AuthMechs LOGIN
 SSLType $ssltype
 CertificateFile $cacert
 
