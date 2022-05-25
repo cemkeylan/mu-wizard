@@ -331,11 +331,20 @@ getoptions_help() {
 }
 
 out() { printf '%s\n' "$@" >&2 ;}
-err() { printf '\033[1m%s\033[m\n' "$@" >&2 ;}
+warn() { printf '\033[1;33mWARNING\033[m %s\n' "$@" >&2 ;}
+info() { printf '\033[1;36mINFO\033[m %s\n' "$@" >&2 ;}
+err() { printf '\033[1mERROR \033[m%s\n' "$@" >&2 ;}
 die() { err "$@"; exit 1 ;}
 version() { printf 'mu-wizard version: %s\n' @VERSION@ ;}
+
 notify() {
-    notify-send -i mail-unread -a "mu-wizard" "$@"
+    case ${notify_method##*/} in
+        notify-send) "$notify_method" -i mail-unread -a "mu-wizard" "$@" ;;
+        herbe)       "$notify_method" "$@" ;;
+        null) info "No notification method found, disabling notifications"; notify_method=disabled ;;
+        disabled) ;;
+        *) warn "Notification method '$notify_method' unknown"; notify_method=disabled
+    esac
 }
 prompt() {
     # The first argument is used as the prompt, and will print as 'prompt: '.
@@ -698,6 +707,14 @@ main() {
         isync_far=Master isync_near=Slave
     fi
 
+    # Set notification program, we support both libnotify, which is the most
+    # common one out there, and also herbe, which does not depend on dbus. We
+    # try 'notify-send' first, because its interface is more convenient.
+    notify_method=${MUW_NOTIFY:-$(
+                    command -v notify-send ||
+                    command -v herbe)} ||
+                    notify_method=null
+}
     eval "$(getoptions parser_definition parse)"
     parse "$@"; eval set -- "$REST"
     action=$1;  shift
