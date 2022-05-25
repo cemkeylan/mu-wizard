@@ -679,15 +679,19 @@ get_information() {
     case "$sport" in 465) starttlsoff="tls_starttls off"; esac
 }
 
-main() {
+prepare() {
+    # Make the initial checks to make sure we have the necessary programs to
+    # actually run mu-wizard.
     pass_prog=${MUW_PWM:-$(command -v pass || command -v pash || command -v pm)} ||
         die "No applicable password manager found."
     command -v mbsync >/dev/null || die "mbsync must be installed for mu-wizard to work."
 
+    # Set some variables that are used throughout the script.
     sharedir=/usr/share/mu-wizard
     ssltype=IMAPS
     msg_behavior=sent
 
+    # Create configuration and cache directories.
     mkdir -p "${config_home:=${XDG_CONFIG_HOME:-$HOME/.config}}" \
              "${confdir:=$config_home/mu4e}" \
              "${cac_dir:=${XDG_CACHE_HOME:-$HOME/.cache}}" \
@@ -715,6 +719,10 @@ main() {
                     command -v herbe)} ||
                     notify_method=null
 }
+
+main() {
+    prepare
+
     eval "$(getoptions parser_definition parse)"
     parse "$@"; eval set -- "$REST"
     action=$1;  shift
