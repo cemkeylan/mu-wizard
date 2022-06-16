@@ -22,7 +22,7 @@ parser_definition() {
 cmd_a() {
     # Grab the first character of the subcommand, and add it to the option
     # parser as a subcommand.
-    cmd "${1%${1#?}}" hidden:1; cmd "$@"
+    cmd "${1%"${1#?}"}" hidden:1; cmd "$@"
 }
 
 parser_definition_add() {
