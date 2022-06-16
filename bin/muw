@@ -755,6 +755,7 @@ main() {
                 sort -uo "$confdir/domains.csv" "$confdir/domains.csv" -
             trap - INT EXIT
             out "All done. You can now run '${0##*/} sync $title' in order to sync this account."
+            out "You can also run '${0##*/} mu-init' to easily initialise the database."
             ;;
         l|list)
             eval "$(getoptions parser_definition_list parse)"
