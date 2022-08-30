@@ -17,6 +17,23 @@ database.
 If the program is given arguments, it will interpret them as profile names and
 will sync only those profiles. It will otherwise sync all profiles managed under
 .Sy mu-wizard .
+.Sh MAIL NOTIFICATIONS
+.Nm muw
+sends notifications for all unread mails since the last sync. The notification
+program used by
+.Nm muw
+can be changed by using the
+.Va MUW_NOTIFY
+environment variable. These can be set as the following:
+.Pp
+.Bl -dash -offset indent -compact
+.It
+libnotify
+.It
+.Lk https://github.com/dudik/herbe herbe
+.It
+disabled (for disabling notifications)
+.El
 .Sh AUTHOR
 .An Cem Keylan Aq Mt cem@ckyln.com
 .Sh COPYING
