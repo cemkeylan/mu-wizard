@@ -1,3 +1,5 @@
+.POSIX:
+
 PREFIX     = /usr/local
 BINDIR     = ${PREFIX}/bin
 SHAREDIR   = ${PREFIX}/share
