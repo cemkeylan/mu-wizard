@@ -397,8 +397,8 @@ yesno() {
 
 delete() {
     rm -f "$accountdir/$1.el"
-    sed_i "$HOME/.mbsyncrc" "/^IMAPStore $1-remote\$/,/^# End profile\$/d"
-    sed_i "$config_home/msmtp/config" "/^account $1\$/,/^# End profile\$/d"
+    sed_i "/^IMAPStore $1-remote\$/,/^# End profile\$/d" "$HOME/.mbsyncrc"
+    sed_i "/^account $1\$/,/^# End profile\$/d"          "$config_home/msmtp/config"
     rm -f /tmp/mbsync-boxes
 }
 
@@ -415,10 +415,39 @@ EOF
 sed_i() {
     # POSIX compliant 'sed -i' like function. This can be only used for a single
     # file, and the filename should always come first.
-    file=$1; shift
-    [ -f "$file" ] || die "$file: No such file or directory"
-    sed "$@" "$file" > _; cat _ > "$file"
-    rm -f _
+    script='' sedf='--' optesc='' suffix=tmp.$$
+
+    while getopts nre:Ef: flag; do
+        case $flag in
+            E|r|n) sedf="-${sedf##*-}$flag" optesc=-- ;;
+            e) script=$(printf '%s\n%s\n' "$script" "$OPTARG") ;;
+            f) script=$(printf '%s\n%s\n' "$script" "$(cat "$OPTARG")") ;;
+            *) return 1
+        esac
+    done
+
+    shift "$((OPTIND - 1))"
+
+    [ "$script" ] || { script=$1; shift ;}
+
+    for file; do
+        # Create traps for removing temporary files on failure
+        trap 'rm -f "$file.$suffix"' EXIT
+        trap 'rm -f "$file.$suffix"; exit 1' INT
+
+        # Save the edited stream in the temporary file
+        sed "$sedf" $optesc "$script" "$file" > "$file.$suffix"
+
+        # Pipe back the contents of the temporary file so that we don't have any
+        # permission related issues.
+        cat "$file.$suffix" > "$file"
+
+        # Remove the temporary file.
+        rm -f "$file.$suffix"
+
+        # Restore the trap
+        trap - INT EXIT
+    done
 }
 
 get_profiles() {
